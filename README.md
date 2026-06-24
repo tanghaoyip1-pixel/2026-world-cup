@@ -1,37 +1,85 @@
-# ⚽ 2026 世界杯晋级之路
+# ⚽ 2026 FIFA World Cup — Road to Knockout
 
-一个纯静态网站，展示 2026 年 FIFA 世界杯小组赛积分榜和淘汰赛对阵图。数据实时从网络获取。
+A single-file static website tracking the **2026 FIFA World Cup** group stage, knockout bracket, and player statistics. Built with pure HTML, CSS, and JavaScript — no frameworks, no build tools, no dependencies.
 
-## 🚀 如何打开
+**Live site:** [tanghaoyip1-pixel.github.io/2026-world-cup](https://tanghaoyip1-pixel.github.io/2026-world-cup/)
 
-### 方法一：直接双击（最简单）
-双击 `index.html` 文件，浏览器会打开。
+## Features
 
-> ⚠️ 如果浏览器拦截了数据请求（显示"加载失败"），请用方法二。
+### 📊 Group Standings
+- All 12 groups (A–L) with 48 teams
+- Sort by points → goal difference → goals scored
+- Top 2 highlighted in gold as knockout qualifiers
+- Click any group for: full table, match history, and goal scorers
 
-### 方法二：本地服务器（推荐）
-在终端中执行：
+### 🏟 Knockout Bracket
+- Round of 32 → Round of 16 → Quarterfinals → Semifinals → Final
+- Qualified teams auto-filled into their bracket slots
+- Visual tree layout with flags and scores
+
+### 📈 Stats Leaderboards
+- **Top Scorers** — goal count, player name, team flag
+- **Top Assists** — assist count with source match data
+- **Yellow Cards / Red Cards** — discipline records
+
+### 🔄 Live Data
+- **Manual refresh** — green button in the top-right corner
+- **Auto-refresh** — silently updates every 30 minutes
+- Data fetched live from ESPN public API (no API key required)
+
+## Data Sources
+
+| Source | What | Speed |
+|--------|------|-------|
+| [ESPN API](https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world) | Match results, goals, assists, cards | ⚡ Fast (global CDN, CORS enabled) |
+| [worldcup26.ir](https://worldcup26.ir) | Team names, group structure, scorers (backup) | 🐢 Slower (fallback only) |
+
+Team market values from [Transfermarkt](https://www.transfermarkt.com) (static, updated periodically).
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Structure | HTML5 |
+| Styling | CSS3 (custom properties, grid, animations, responsive) |
+| Logic | Vanilla JavaScript (fetch API, localStorage caching, ES modules-free) |
+
+## How It Works
+
+1. **Instant load:** Pre-bundled match data renders immediately — no network wait
+2. **Background sync:** Fetches latest ESPN results (dual-source race with 6s timeout)
+3. **Client-side compute:** Standings calculated from match results in the browser
+4. **Local cache:** 5-minute TTL for matches; versioned cache for stats
+5. **Auto-refresh:** Silent background refresh every 30 minutes
+
+## Run Locally
+
+Double-click `index.html` to open in any browser, or serve with Python:
+
 ```bash
-cd /Users/haohao/first
 python3 -m http.server 8080
+# Open http://localhost:8080
 ```
-然后浏览器打开 **http://localhost:8080**
 
-### 方法三：部署到线上（免费）
-1. 注册 [GitHub](https://github.com) 账号
-2. 创建一个新仓库，上传 `index.html`
-3. 在仓库 Settings → Pages 中启用 GitHub Pages
-4. 获得一个公开网址，手机电脑都能访问
+## Deploy
 
-## 📊 功能
+This site is deployed via **GitHub Pages** on the `main` branch. To fork and deploy your own:
 
-- **小组赛页**：12 个小组（A-L）的积分榜一目了然，金色高亮 = 晋级区
-- **点击任意组**：弹出详情窗口，看完整积分榜 + 比赛记录 + 进球者
-- **淘汰赛页**：32强对阵图，已确定晋级的球队自动填入对应位置
-- **刷新按钮**：右上角绿色按钮，点击拉取最新数据
-- **球队数据**：积分、胜平负、进球、失球、净胜球、球队总身价
+1. Fork this repo
+2. Go to **Settings → Pages**
+3. Set source to `main` branch, root (`/`)
+4. Your site will be live at `https://<your-username>.github.io/2026-world-cup/`
 
-## 🔄 数据来源
+## Project Structure
 
-比赛数据来自 [worldcup26.ir](https://worldcup26.ir) 免费 API。
-球队身价来自 Transfermarkt（静态数据）。
+```
+.
+├── index.html      # The entire website (HTML + CSS + JS)
+├── haaland.png     # Decorative watermark image
+├── README.md       # You're reading it
+└── .gitignore
+```
+
+## License
+
+MIT — free to use, modify, and share.
