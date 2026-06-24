@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚽ 2026 世界杯晋级之路</title>
+<style>
+/* ========== 基础重置 ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --pitch-dark: #0d2814;
+  --pitch-mid: #1a472a;
+  --pitch-light: #2d6a3f;
+  --gold: #f0c040;
+  --gold-bright: #ffd700;
+  --white: #f0f0e8;
+  --text: #e8e8d8;
+  --card-bg: rgba(10, 30, 15, 0.85);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --qualify-glow: rgba(240, 192, 64, 0.35);
+  --danger: #e04040;
+  --info: #60a0d0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--pitch-dark);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(34, 139, 34, 0.25) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(34, 139, 34, 0.2) 0%, transparent 50%),
+    repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.008) 3px, rgba(255,255,255,0.008) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(255,255,255,0.012) 60px, rgba(255,255,255,0.012) 61px);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ========== 页头 ========== */
+.header {
+  background: linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,30,0,0.6) 100%);
+  border-bottom: 2px solid var(--gold);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header-icon {
+  font-size: 40px;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.header h1 {
+  font-size: clamp(18px, 3vw, 26px);
+  background: linear-gradient(135deg, var(--gold-bright), #fff8c0, var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: #8ab890;
+  display: block;
+  -webkit-text-fill-color: #8ab890;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.last-update {
+  font-size: 13px;
+  color: #8ab890;
+  text-align: right;
+}
+
+.last-update span {
+  display: block;
+  color: #ccc;
+  font-size: 12px;
+}
+
+/* ========== 刷新按钮 ========== */
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a3a1a;
+  background: linear-gradient(135deg, #4caf50, #66bb6a);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4), 0 0 30px rgba(76, 175, 80, 0.15);
+  transition: all 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.btn-refresh:hover {
+  background: linear-gradient(135deg, #66bb6a, #81c784);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.55), 0 0 40px rgba(76, 175, 80, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-refresh:active {
+  transform: scale(0.96);
+}
+
+.btn-refresh .icon {
+  font-size: 22px;
+  display: inline-block;
+  transition: transform 0.6s;
+}
+
+.btn-refresh.spinning .icon {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ========== Tab导航 ========== */
+.tabs {
+  display: flex;
+  gap: 0;
+  background: rgba(0,0,0,0.3);
+  padding: 0 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.tab-btn {
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: #8ab890;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.25s;
+  letter-spacing: 0.5px;
+}
+
+.tab-btn:hover { color: #c0e0c0; }
+
+.tab-btn.active {
+  color: var(--gold-bright);
+  border-bottom-color: var(--gold);
+}
+
+/* ========== 内容区 ========== */
+.content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ========== 加载/错误状态 ========== */
+.status-box {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.loader {
+  display: inline-block;
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.error-msg {
+  color: var(--danger);
+  font-size: 16px;
+  padding: 20px;
+  background: rgba(200,0,0,0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(200,0,0,0.3);
+}
+
+/* ========== 小组卡片网格 ========== */
+.groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+.group-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s;
+  backdrop-filter: blur(5px);
+}
+
+.group-card:hover {
+  border-color: rgba(255,255,255,0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+
+.group-card-header {
+  background: linear-gradient(135deg, rgba(0,40,0,0.6), rgba(10,50,10,0.4));
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.group-name {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--gold-bright);
+}
+
+.group-card-header .arrow {
+  font-size: 14px;
+  color: #8ab890;
+  transition: transform 0.3s;
+}
+
+.group-card:hover .arrow { transform: translateX(4px); }
+
+/* 球队行 */
+.team-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.2s;
+  font-size: 14px;
+}
+
+.team-row:hover { background: rgba(255,255,255,0.04); }
+
+.team-row.qualified {
+  background: linear-gradient(90deg, rgba(240,192,64,0.1), transparent);
+  border-left: 3px solid var(--gold);
+}
+
+.team-rank {
+  width: 22px;
+  font-weight: 900;
+  font-size: 15px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.team-row.qualified .team-rank { color: var(--gold-bright); }
+
+.team-flag {
+  width: 28px;
+  height: 20px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.team-name {
+  flex: 1;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-stats {
+  display: flex;
+  gap: 6px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.stat-item {
+  min-width: 22px;
+  text-align: center;
+}
+
+.stat-mp { color: #aaa; }
+.stat-gf { color: #81c784; }
+.stat-ga { color: #e57373; }
+.stat-gd { color: #90caf9; font-size: 11px; }
+.stat-pts {
+  font-weight: 900;
+  font-size: 15px;
+  color: var(--gold-bright);
+  min-width: 24px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: #777;
+  text-transform: uppercase;
+}
+
+/* ========== 组详情弹窗 ========== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn { from { opacity: 0; } }
+
+.modal {
+  background: linear-gradient(180deg, #0f2f15, #0a1f0e);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  max-width: 700px;
+  width: 95%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: rgba(10,30,15,0.95);
+  backdrop-filter: blur(10px);
+  z-index: 1;
+}
+
+.modal-header h2 {
+  font-size: 22px;
+  color: var(--gold-bright);
+}
+
+.modal-close {
+  width: 36px; height: 36px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.05);
+  color: #ccc;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal-close:hover { background: rgba(255,0,0,0.3); border-color: #e04040; }
+
+.modal-body { padding: 16px 24px 24px; }
+
+/* 积分榜表格 */
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.standings-table th {
+  text-align: center;
+  padding: 10px 6px;
+  background: rgba(0,0,0,0.3);
+  color: #aaa;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  white-space: nowrap;
+}
+
+.standings-table th:first-child { text-align: left; padding-left: 12px; }
+
+.standings-table td {
+  text-align: center;
+  padding: 9px 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.standings-table td:first-child {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.standings-table .qualify-row { background: rgba(240,192,64,0.08); }
+.standings-table .qualify-row td:first-child { color: var(--gold-bright); }
+
+.market-value {
+  font-size: 12px;
+  color: #90caf9;
+}
+
+/* 比赛记录 */
+.match-list { display: flex; flex-direction: column; gap: 8px; }
+
+.match-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.match-teams { display: flex; align-items: center; gap: 8px; flex: 1; }
+
+.match-score {
+  font-weight: 900;
+  font-size: 16px;
+  color: var(--gold-bright);
+  min-width: 50px;
+  text-align: center;
+  background: rgba(0,0,0,0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.match-meta {
+  font-size: 11px;
+  color: #777;
+  text-align: right;
+  min-width: 80px;
+}
+
+.match-finished { color: #81c784; }
+.match-live { color: #e04040; animation: pulse 1.5s ease-in-out infinite; }
+.match-scheduled { color: #777; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.scorers { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+/* ========== 淘汰赛对阵图 ========== */
+.bracket-container {
+  overflow-x: auto;
+  padding: 20px 0;
+}
+
+.bracket-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--gold-bright);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.bracket-round-labels {
+  display: flex;
+  gap: 0;
+  margin-bottom: 8px;
+  padding-left: 0;
+}
+
+.bracket-round-label {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #8ab890;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.bracket {
+  display: flex;
+  gap: 8px;
+  min-width: max-content;
+  align-items: stretch;
+}
+
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 4px;
+}
+
+.bracket-match {
+  background: rgba(10,30,15,0.85);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 0;
+  min-width: 170px;
+  font-size: 13px;
+  position: relative;
+}
+
+.bracket-match.confirmed {
+  border-color: rgba(240,192,64,0.3);
+}
+
+.bracket-slot {
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: default;
+}
+
+.bracket-slot:first-child { border-bottom: 1px solid rgba(255,255,255,0.08); }
+
+.bracket-slot.team-confirmed {
+  font-weight: 700;
+  color: var(--gold-bright);
+  background: rgba(240,192,64,0.06);
+}
+
+.bracket-slot.placeholder {
+  color: #666;
+  font-style: italic;
+  font-size: 11px;
+}
+
+.bracket-slot img {
+  width: 20px; height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.bracket-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  color: #555;
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .header { padding: 12px 16px; }
+  .header h1 { font-size: 18px; }
+  .header-icon { font-size: 30px; }
+  .btn-refresh { padding: 10px 16px; font-size: 14px; }
+  .groups-grid { grid-template-columns: 1fr; }
+  .tabs { padding: 0 8px; }
+  .tab-btn { padding: 12px 16px; font-size: 14px; }
+  .bracket-match { min-width: 140px; font-size: 11px; }
+  .standings-table { font-size: 12px; }
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { height: 6px; width: 6px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+/* ========== 数据榜单 ========== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+.stats-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.stats-card-header {
+  background: linear-gradient(135deg, rgba(0,40,0,0.6), rgba(10,50,10,0.4));
+  padding: 14px 18px;
+  font-size: 17px;
+  font-weight: 900;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.stats-card-header .icon { margin-right: 6px; }
+.stats-header-goals { color: #ffd700; }
+.stats-header-assists { color: #64b5f6; }
+.stats-header-cards { color: #ef9a9a; }
+
+.stats-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.stats-table th {
+  text-align: left; padding: 8px 12px;
+  color: #888; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.2);
+}
+.stats-table th:first-child { width: 36px; text-align: center; }
+.stats-table th:last-child { width: 48px; text-align: center; }
+
+.stats-table td {
+  padding: 7px 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.stats-table td:first-child { text-align: center; font-weight: 900; font-size: 15px; }
+.stats-table td:last-child { text-align: center; font-weight: 900; font-size: 16px; }
+
+.stats-rank-1 td:first-child { color: #ffd700; }
+.stats-rank-2 td:first-child { color: #c0c0c0; }
+.stats-rank-3 td:first-child { color: #cd7f32; }
+
+.stats-player { font-weight: 600; }
+.stats-team { font-size: 11px; color: #999; }
+
+.stats-note {
+  text-align: center; color: #666; font-size: 11px;
+  padding: 10px; font-style: italic;
+}
+
+/* ========== 骨架屏 ========== */
+.skeleton-row {
+  pointer-events: none;
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.skeleton-block {
+  display: inline-block;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-card {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.skeleton-card .arrow { color: #555 !important; }
+</style>
+</head>
+<body>
+
+<!-- ===== 页头 ===== -->
+<header class="header">
+  <div class="header-left">
+    <span class="header-icon">⚽</span>
+    <div>
+      <h1>2026 世界杯 · 晋级之路</h1>
+      <span class="header-subtitle">FIFA World Cup 2026 — USA · Mexico · Canada</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="last-update" id="updateTime">
+      加载中...
+    </div>
+    <button class="btn-refresh" id="btnRefresh" onclick="refreshData()" title="刷新比赛数据">
+      <span class="icon">🔄</span> 刷新数据
+    </button>
+  </div>
+</header>
+
+<!-- ===== Tab导航 ===== -->
+<nav class="tabs">
+  <button class="tab-btn active" onclick="switchTab('groups')" id="tabGroups">📊 小组赛</button>
+  <button class="tab-btn" onclick="switchTab('knockout')" id="tabKnockout">🏟️ 淘汰赛对阵</button>
+  <button class="tab-btn" onclick="switchTab('stats')" id="tabStats">📈 数据榜单</button>
+</nav>
+
+<!-- ===== 内容区 ===== -->
+<main class="content">
+  <!-- 小组赛 -->
+  <div class="tab-panel active" id="panelGroups">
+    <div id="groupsStatus" class="status-box">
+      <div class="loader"></div>
+      <p style="margin-top:16px;color:#aaa;">正在加载比赛数据...</p>
+    </div>
+    <div class="groups-grid" id="groupsGrid"></div>
+  </div>
+
+  <!-- 淘汰赛 -->
+  <div class="tab-panel" id="panelKnockout">
+    <div class="bracket-title">🏟️ 淘汰赛对阵图</div>
+    <p style="text-align:center;color:#777;margin-bottom:20px;font-size:13px;">
+      晋级球队将自动填入对应位置 · 虚线框 = 待定名额
+    </p>
+    <div class="bracket-container" id="bracketContainer">
+      <div class="status-box"><div class="loader"></div></div>
+    </div>
+  </div>
+
+  <!-- 数据榜单 -->
+  <div class="tab-panel" id="panelStats">
+    <div class="stats-grid" id="statsGrid">
+      <div class="status-box"><div class="loader"></div><p style="margin-top:16px;color:#aaa;">正在统计数据...</p></div>
+    </div>
+  </div>
+</main>
+
+
+<!-- 预置数据：页面秒开用 -->
+<script>
+
+// ===== 预置数据（打包于 2026-06-19 22:36）=====
+const BUNDLED_DATA = {
+  teams: {"teams": [{"_id": "679c9c6b5749c4077500ea02", "name_en": "South Africa", "name_fa": "آفریقای جنوبی", "flag": "https://flagcdn.com/w80/za.png", "fifa_code": "RSA", "iso2": "ZA", "groups": "A", "id": "2"}, {"_id": "679c9c6b5749c4077500ea09", "name_en": "Brazil", "name_fa": "برزیل", "flag": "https://flagcdn.com/w80/br.png", "fifa_code": "BRA", "iso2": "BR", "groups": "C", "id": "9"}, {"_id": "679c9c6b5749c4077500ea12", "name_en": "Scotland", "name_fa": "اسکاتلند", "flag": "https://flagcdn.com/w80/gb-sct.png", "fifa_code": "SCO", "iso2": "SCO", "groups": "C", "id": "12"}, {"_id": "679c9c6b5749c4077500ea16", "name_en": "Turkey", "name_fa": "ترکیه", "flag": "https://flagcdn.com/w80/tr.png", "fifa_code": "TUR", "iso2": "TR", "groups": "D", "id": "16"}, {"_id": "679c9c6b5749c4077500ea19", "name_en": "Ivory Coast", "name_fa": "ساحل عاج", "flag": "https://flagcdn.com/w80/ci.png", "fifa_code": "CIV", "iso2": "CI", "groups": "E", "id": "19"}, {"_id": "679c9c6b5749c4077500ea21", "name_en": "Netherlands", "name_fa": "هلند", "flag": "https://flagcdn.com/w80/nl.png", "fifa_code": "NED", "iso2": "NL", "groups": "F", "id": "21"}, {"_id": "679c9c6b5749c4077500ea30", "name_en": "Cape Verde", "name_fa": "کیپ ورد", "flag": "https://flagcdn.com/w80/cv.png", "fifa_code": "CPV", "iso2": "CV", "groups": "H", "id": "30"}, {"_id": "679c9c6b5749c4077500ea33", "name_en": "France", "name_fa": "فرانسه", "flag": "https://flagcdn.com/w80/fr.png", "fifa_code": "FRA", "iso2": "FR", "groups": "I", "id": "33"}, {"_id": "679c9c6b5749c4077500ea24", "name_en": "Tunisia", "name_fa": "تونس", "flag": "https://flagcdn.com/w80/tn.png", "fifa_code": "TUN", "iso2": "TN", "groups": "F", "id": "24"}, {"_id": "679c9c6b5749c4077500ea26", "name_en": "Egypt", "name_fa": "مصر", "flag": "https://flagcdn.com/w80/eg.png", "fifa_code": "EGY", "iso2": "EG", "groups": "G", "id": "26"}, {"_id": "679c9c6b5749c4077500ea35", "name_en": "Iraq", "name_fa": "عراق", "flag": "https://flagcdn.com/w80/iq.png", "fifa_code": "IRQ", "iso2": "IQ", "groups": "I", "id": "35"}, {"_id": "679c9c6b5749c4077500ea41", "name_en": "Portugal", "name_fa": "پرتغال", "flag": "https://flagcdn.com/w80/pt.png", "fifa_code": "POR", "iso2": "PT", "groups": "K", "id": "41"}, {"_id": "679c9c6b5749c4077500ea43", "name_en": "Uzbekistan", "name_fa": "ازبکستان", "flag": "https://flagcdn.com/w80/uz.png", "fifa_code": "UZB", "iso2": "UZ", "groups": "K", "id": "43"}, {"_id": "679c9c6b5749c4077500ea44", "name_en": "Colombia", "name_fa": "کلمبیا", "flag": "https://flagcdn.com/w80/co.png", "fifa_code": "COL", "iso2": "CO", "groups": "K", "id": "44"}, {"_id": "679c9c6b5749c4077500ea20", "name_en": "Ecuador", "name_fa": "اکوادور", "flag": "https://flagcdn.com/w80/ec.png", "fifa_code": "ECU", "iso2": "EC", "groups": "E", "id": "20"}, {"_id": "679c9c6b5749c4077500ea22", "name_en": "Japan", "name_fa": "ژاپن", "flag": "https://flagcdn.com/w80/jp.png", "fifa_code": "JPN", "iso2": "JP", "groups": "F", "id": "22"}, {"_id": "679c9c6b5749c4077500ea28", "name_en": "New Zealand", "name_fa": "نیوزیلند", "flag": "https://flagcdn.com/w80/nz.png", "fifa_code": "NZL", "iso2": "NZ", "groups": "G", "id": "28"}, {"_id": "679c9c6b5749c4077500ea31", "name_en": "Saudi Arabia", "name_fa": "عربستان", "flag": "https://flagcdn.com/w80/sa.png", "fifa_code": "KSA", "iso2": "SA", "groups": "H", "id": "31"}, {"_id": "679c9c6b5749c4077500ea39", "name_en": "Austria", "name_fa": "اتریش", "flag": "https://flagcdn.com/w80/at.png", "fifa_code": "AUT", "iso2": "AT", "groups": "J", "id": "39"}, {"_id": "679c9c6b5749c4077500ea47", "name_en": "Ghana", "name_fa": "غنا", "flag": "https://flagcdn.com/w80/gh.png", "fifa_code": "GHA", "iso2": "GH", "groups": "L", "id": "47"}, {"_id": "679c9c6b5749c4077500ea03", "name_en": "South Korea", "name_fa": "کره جنوبی", "flag": "https://flagcdn.com/w80/kr.png", "fifa_code": "KOR", "iso2": "KR", "groups": "A", "id": "3"}, {"_id": "679c9c6b5749c4077500ea29", "name_en": "Spain", "name_fa": "اسپانیا", "flag": "https://flagcdn.com/w80/es.png", "fifa_code": "ESP", "iso2": "ES", "groups": "H", "id": "29"}, {"_id": "679c9c6b5749c4077500ea36", "name_en": "Norway", "name_fa": "نروژ", "flag": "https://flagcdn.com/w80/no.png", "fifa_code": "NOR", "iso2": "NO", "groups": "I", "id": "36"}, {"_id": "679c9c6b5749c4077500ea37", "name_en": "Argentina", "name_fa": "آرژانتین", "flag": "https://flagcdn.com/w80/ar.png", "fifa_code": "ARG", "iso2": "AR", "groups": "J", "id": "37"}, {"_id": "679c9c6b5749c4077500ea42", "name_en": "Democratic Republic of the Congo", "name_fa": "جمهوری دموکراتیک کنگو", "flag": "https://flagcdn.com/w80/cd.png", "fifa_code": "COD", "iso2": "CD", "groups": "K", "id": "42"}, {"_id": "679c9c6b5749c4077500ea45", "name_en": "England", "name_fa": "انگلستان", "flag": "https://flagcdn.com/w80/gb-eng.png", "fifa_code": "ENG", "iso2": "ENG", "groups": "L", "id": "45"}, {"_id": "679c9c6b5749c4077500ea04", "name_en": "Czech Republic", "name_fa": "جمهوری چک", "flag": "https://flagcdn.com/w80/cz.png", "fifa_code": "CZE", "iso2": "CZ", "groups": "A", "id": "4"}, {"_id": "679c9c6b5749c4077500ea05", "name_en": "Canada", "name_fa": "کانادا", "flag": "https://flagcdn.com/w80/ca.png", "fifa_code": "CAN", "iso2": "CA", "groups": "B", "id": "5"}, {"_id": "679c9c6b5749c4077500ea07", "name_en": "Qatar", "name_fa": "قطر", "flag": "https://flagcdn.com/w80/qa.png", "fifa_code": "QAT", "iso2": "QA", "groups": "B", "id": "7"}, {"_id": "679c9c6b5749c4077500ea08", "name_en": "Switzerland", "name_fa": "سوئیس", "flag": "https://flagcdn.com/w80/ch.png", "fifa_code": "SUI", "iso2": "CH", "groups": "B", "id": "8"}, {"_id": "679c9c6b5749c4077500ea10", "name_en": "Morocco", "name_fa": "مراکش", "flag": "https://flagcdn.com/w80/ma.png", "fifa_code": "MAR", "iso2": "MA", "groups": "C", "id": "10"}, {"_id": "679c9c6b5749c4077500ea14", "name_en": "Paraguay", "name_fa": "پاراگوئه", "flag": "https://flagcdn.com/w80/py.png", "fifa_code": "PAR", "iso2": "PY", "groups": "D", "id": "14"}, {"_id": "679c9c6b5749c4077500ea18", "name_en": "Curaçao", "name_fa": "کوراسائو", "flag": "https://flagcdn.com/w80/cw.png", "fifa_code": "CUW", "iso2": "CW", "groups": "E", "id": "18"}, {"_id": "679c9c6b5749c4077500ea23", "name_en": "Sweden", "name_fa": "سوئد", "flag": "https://flagcdn.com/w80/se.png", "fifa_code": "SWE", "iso2": "SE", "groups": "F", "id": "23"}, {"_id": "679c9c6b5749c4077500ea38", "name_en": "Algeria", "name_fa": "الجزایر", "flag": "https://flagcdn.com/w80/dz.png", "fifa_code": "ALG", "iso2": "DZ", "groups": "J", "id": "38"}, {"_id": "679c9c6b5749c4077500ea40", "name_en": "Jordan", "name_fa": "اردن", "flag": "https://flagcdn.com/w80/jo.png", "fifa_code": "JOR", "iso2": "JO", "groups": "J", "id": "40"}, {"_id": "679c9c6b5749c4077500ea11", "name_en": "Haiti", "name_fa": "هائیتی", "flag": "https://flagcdn.com/w80/ht.png", "fifa_code": "HAI", "iso2": "HT", "groups": "C", "id": "11"}, {"_id": "679c9c6b5749c4077500ea17", "name_en": "Germany", "name_fa": "آلمان", "flag": "https://flagcdn.com/w80/de.png", "fifa_code": "GER", "iso2": "DE", "groups": "E", "id": "17"}, {"_id": "679c9c6b5749c4077500ea32", "name_en": "Uruguay", "name_fa": "اروگوئه", "flag": "https://flagcdn.com/w80/uy.png", "fifa_code": "URU", "iso2": "UY", "groups": "H", "id": "32"}, {"_id": "679c9c6b5749c4077500ea34", "name_en": "Senegal", "name_fa": "سنگال", "flag": "https://flagcdn.com/w80/sn.png", "fifa_code": "SEN", "iso2": "SN", "groups": "I", "id": "34"}, {"_id": "679c9c6b5749c4077500ea48", "name_en": "Panama", "name_fa": "پاناما", "flag": "https://flagcdn.com/w80/pa.png", "fifa_code": "PAN", "iso2": "PA", "groups": "L", "id": "48"}, {"_id": "679c9c6b5749c4077500ea01", "name_en": "Mexico", "name_fa": "مکزیک", "flag": "https://flagcdn.com/w80/mx.png", "fifa_code": "MEX", "iso2": "MX", "groups": "A", "id": "1"}, {"_id": "679c9c6b5749c4077500ea06", "name_en": "Bosnia and Herzegovina", "name_fa": "بوسنی و هرزگوین", "flag": "https://flagcdn.com/w80/ba.png", "fifa_code": "BIH", "iso2": "BA", "groups": "B", "id": "6"}, {"_id": "679c9c6b5749c4077500ea13", "name_en": "United States", "name_fa": "آمریکا", "flag": "https://flagcdn.com/w80/us.png", "fifa_code": "USA", "iso2": "US", "groups": "D", "id": "13"}, {"_id": "679c9c6b5749c4077500ea15", "name_en": "Australia", "name_fa": "استرالیا", "flag": "https://flagcdn.com/w80/au.png", "fifa_code": "AUS", "iso2": "AU", "groups": "D", "id": "15"}, {"_id": "679c9c6b5749c4077500ea25", "name_en": "Belgium", "name_fa": "بلژیک", "flag": "https://flagcdn.com/w80/be.png", "fifa_code": "BEL", "iso2": "BE", "groups": "G", "id": "25"}, {"_id": "679c9c6b5749c4077500ea27", "name_en": "Iran", "name_fa": "ایران", "flag": "https://flagcdn.com/w80/ir.png", "fifa_code": "IRN", "iso2": "IR", "groups": "G", "id": "27"}, {"_id": "679c9c6b5749c4077500ea46", "name_en": "Croatia", "name_fa": "کرواسی", "flag": "https://flagcdn.com/w80/hr.png", "fifa_code": "CRO", "iso2": "HR", "groups": "L", "id": "46"}]},
+  groups: {"groups": [{"_id": "698985a46e8cb0bf61b5ac9e", "name": "H", "teams": [{"team_id": "29", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "0", "ga": "0", "gd": "0", "_id": "698985a46e8cb0bf61b5ac9f"}, {"team_id": "30", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "0", "ga": "0", "gd": "0", "_id": "698985a46e8cb0bf61b5aca0"}, {"team_id": "31", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "0", "ga": "0", "gd": "0", "_id": "698985a46e8cb0bf61b5aca1"}, {"team_id": "32", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "1", "ga": "1", "gd": "0", "_id": "698985a46e8cb0bf61b5aca2"}], "createdAt": "2026-02-09T06:58:44.378Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5aca4", "name": "I", "teams": [{"team_id": "33", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "3", "ga": "1", "gd": "2", "_id": "698985a46e8cb0bf61b5aca5"}, {"team_id": "34", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "1", "ga": "3", "gd": "-2", "_id": "698985a46e8cb0bf61b5aca6"}, {"team_id": "35", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "1", "ga": "4", "gd": "-3", "_id": "698985a46e8cb0bf61b5aca7"}, {"team_id": "36", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "4", "ga": "1", "gd": "3", "_id": "698985a46e8cb0bf61b5aca8"}], "createdAt": "2026-02-09T06:58:44.383Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5ac86", "name": "D", "teams": [{"team_id": "13", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "4", "ga": "1", "gd": "3", "_id": "698985a46e8cb0bf61b5ac87"}, {"team_id": "14", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "1", "ga": "4", "gd": "-3", "_id": "698985a46e8cb0bf61b5ac88"}, {"team_id": "15", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "2", "ga": "0", "gd": "2", "_id": "698985a46e8cb0bf61b5ac89"}, {"team_id": "16", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "0", "ga": "2", "gd": "-2", "_id": "698985a46e8cb0bf61b5ac8a"}], "createdAt": "2026-02-09T06:58:44.364Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5ac8c", "name": "E", "teams": [{"team_id": "17", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "7", "ga": "1", "gd": "6", "_id": "698985a46e8cb0bf61b5ac8d"}, {"team_id": "18", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "1", "ga": "7", "gd": "-6", "_id": "698985a46e8cb0bf61b5ac8e"}, {"team_id": "19", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "1", "ga": "0", "gd": "1", "_id": "698985a46e8cb0bf61b5ac8f"}, {"team_id": "20", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "0", "ga": "1", "gd": "-1", "_id": "698985a46e8cb0bf61b5ac90"}], "createdAt": "2026-02-09T06:58:44.367Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5ac92", "name": "F", "teams": [{"team_id": "21", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "2", "ga": "2", "gd": "0", "_id": "698985a46e8cb0bf61b5ac93"}, {"team_id": "22", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "2", "ga": "2", "gd": "0", "_id": "698985a46e8cb0bf61b5ac94"}, {"team_id": "23", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "5", "ga": "1", "gd": "4", "_id": "698985a46e8cb0bf61b5ac95"}, {"team_id": "24", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "1", "ga": "5", "gd": "-4", "_id": "698985a46e8cb0bf61b5ac96"}], "createdAt": "2026-02-09T06:58:44.371Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5ac98", "name": "G", "teams": [{"team_id": "25", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "1", "ga": "1", "gd": "0", "_id": "698985a46e8cb0bf61b5ac99"}, {"team_id": "26", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "1", "ga": "1", "gd": "0", "_id": "698985a46e8cb0bf61b5ac9a"}, {"team_id": "27", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "2", "ga": "2", "gd": "0", "_id": "698985a46e8cb0bf61b5ac9b"}, {"team_id": "28", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "2", "ga": "2", "gd": "0", "_id": "698985a46e8cb0bf61b5ac9c"}], "createdAt": "2026-02-09T06:58:44.374Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5ac74", "name": "A", "teams": [{"team_id": "1", "mp": "2", "w": "2", "l": "0", "d": "0", "pts": "6", "gf": "3", "ga": "0", "gd": "3", "_id": "698985a46e8cb0bf61b5ac75"}, {"team_id": "3", "mp": "2", "w": "1", "l": "1", "d": "0", "pts": "3", "gf": "2", "ga": "2", "gd": "0", "_id": "698985a46e8cb0bf61b5ac77"}, {"team_id": "4", "mp": "2", "w": "0", "l": "1", "d": "1", "pts": "1", "gf": "2", "ga": "3", "gd": "-1", "_id": "698985a46e8cb0bf61b5ac78"}, {"team_id": "2", "mp": "2", "w": "0", "l": "1", "d": "1", "pts": "1", "gf": "1", "ga": "3", "gd": "-2", "_id": "698985a46e8cb0bf61b5ac76"}], "createdAt": "2026-02-09T06:58:44.331Z", "__v": 0, "updatedAt": "2026-06-19T02:58:15.946Z"}, {"_id": "698985a46e8cb0bf61b5ac7a", "name": "B", "teams": [{"team_id": "5", "mp": "2", "w": "1", "l": "0", "d": "1", "pts": "4", "gf": "7", "ga": "1", "gd": "6", "_id": "698985a46e8cb0bf61b5ac7b"}, {"team_id": "8", "mp": "2", "w": "1", "l": "0", "d": "1", "pts": "4", "gf": "5", "ga": "2", "gd": "3", "_id": "698985a46e8cb0bf61b5ac7e"}, {"team_id": "6", "mp": "2", "w": "0", "l": "1", "d": "1", "pts": "1", "gf": "2", "ga": "5", "gd": "-3", "_id": "698985a46e8cb0bf61b5ac7c"}, {"team_id": "7", "mp": "2", "w": "0", "l": "1", "d": "1", "pts": "1", "gf": "1", "ga": "7", "gd": "-6", "_id": "698985a46e8cb0bf61b5ac7d"}], "createdAt": "2026-02-09T06:58:44.354Z", "__v": 0, "updatedAt": "2026-06-19T00:02:47.382Z"}, {"_id": "698985a46e8cb0bf61b5acb6", "name": "L", "teams": [{"team_id": "45", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "4", "ga": "2", "gd": "2", "_id": "698985a46e8cb0bf61b5acb7"}, {"team_id": "46", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "2", "ga": "4", "gd": "-2", "_id": "698985a46e8cb0bf61b5acb8"}, {"team_id": "47", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "1", "ga": "0", "gd": "1", "_id": "698985a46e8cb0bf61b5acb9"}, {"team_id": "48", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "0", "ga": "1", "gd": "-1", "_id": "698985a46e8cb0bf61b5acba"}], "createdAt": "2026-02-09T06:58:44.396Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5acb0", "name": "K", "teams": [{"team_id": "41", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "1", "ga": "1", "gd": "0", "_id": "698985a46e8cb0bf61b5acb1"}, {"team_id": "42", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "1", "ga": "1", "gd": "0", "_id": "698985a46e8cb0bf61b5acb2"}, {"team_id": "43", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "1", "ga": "3", "gd": "-2", "_id": "698985a46e8cb0bf61b5acb3"}, {"team_id": "44", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "3", "ga": "1", "gd": "2", "_id": "698985a46e8cb0bf61b5acb4"}], "createdAt": "2026-02-09T06:58:44.392Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5ac80", "name": "C", "teams": [{"team_id": "9", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "1", "ga": "1", "gd": "0", "_id": "698985a46e8cb0bf61b5ac81"}, {"team_id": "10", "mp": "1", "w": "0", "l": "0", "d": "1", "pts": "1", "gf": "1", "ga": "1", "gd": "0", "_id": "698985a46e8cb0bf61b5ac82"}, {"team_id": "11", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "0", "ga": "1", "gd": "-1", "_id": "698985a46e8cb0bf61b5ac83"}, {"team_id": "12", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "1", "ga": "0", "gd": "1", "_id": "698985a46e8cb0bf61b5ac84"}], "createdAt": "2026-02-09T06:58:44.360Z", "__v": 0}, {"_id": "698985a46e8cb0bf61b5acaa", "name": "J", "teams": [{"team_id": "37", "mp": "1", "w": "1", "l": "0", "d": "0", "pts": "3", "gf": "3", "ga": "0", "gd": "3", "_id": "698985a46e8cb0bf61b5acab"}, {"team_id": "38", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "0", "ga": "3", "gd": "-3", "_id": "698985a46e8cb0bf61b5acac"}, {"team_id": "39", "mp": "1", "w": "3", "l": "0", "d": "0", "pts": "3", "gf": "3", "ga": "1", "gd": "2", "_id": "698985a46e8cb0bf61b5acad"}, {"team_id": "40", "mp": "1", "w": "0", "l": "1", "d": "0", "pts": "0", "gf": "1", "ga": "3", "gd": "-2", "_id": "698985a46e8cb0bf61b5acae"}], "createdAt": "2026-02-09T06:58:44.388Z", "__v": 0}]},
+  games: {"games": [{"_id": "679c9c8a5749c4077500e001", "id": "1", "home_team_id": "1", "away_team_id": "2", "home_score": "2", "away_score": "0", "home_scorers": "{“J. Quiñones 9'”,”R. Jiménez 67'”}", "away_scorers": "null", "group": "A", "matchday": "1", "local_date": "06/11/2026 13:00", "persian_date": "1405-03-21 13:00", "stadium_id": "1", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Mexico", "home_team_name_fa": "مکزیک", "away_team_name_en": "South Africa", "away_team_name_fa": "آفریقای جنوبی"}, {"_id": "679c9c8a5749c4077500e002", "id": "2", "home_team_id": "3", "away_team_id": "4", "home_score": "2", "away_score": "1", "home_scorers": "{\"I.B. Hwang 67'\",\"H.G. Oh 80'\"}", "away_scorers": "{\"L. Krejčí 59'\"}", "group": "A", "matchday": "1", "local_date": "06/11/2026 20:00", "persian_date": "1405-03-21 20:00", "stadium_id": "2", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "South Korea", "home_team_name_fa": "کره جنوبی", "away_team_name_en": "Czech Republic", "away_team_name_fa": "جمهوری چک"}, {"_id": "679c9c8a5749c4077500e003", "id": "3", "home_team_id": "5", "away_team_id": "6", "home_score": "1", "away_score": "1", "home_scorers": "{\"C. Larin 11'\"}", "away_scorers": "{\"Jovo Lukić 21'\"}", "group": "B", "matchday": "1", "local_date": "06/12/2026 15:00", "persian_date": "1405-03-22 15:00", "stadium_id": "12", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Canada", "home_team_name_fa": "کانادا", "away_team_name_en": "Bosnia and Herzegovina", "away_team_name_fa": "بوسنی و هرزگوین"}, {"_id": "679c9c8a5749c4077500e004", "id": "4", "home_team_id": "13", "away_team_id": "14", "home_score": "4", "away_score": "1", "home_scorers": "{\"D. Bobadilla 7'(OG)\",\"F. Balogun 31'\",\"F. Balogun 45'+5'\",\"G. Reyna 90'+8'\"}", "away_scorers": "{\"Maurício 73'\"}", "group": "D", "matchday": "1", "local_date": "06/12/2026 18:00", "persian_date": "1405-03-22 18:00", "stadium_id": "16", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "United States", "home_team_name_fa": "آمریکا", "away_team_name_en": "Paraguay", "away_team_name_fa": "پاراگوئه"}, {"_id": "679c9c8a5749c4077500e005", "id": "5", "home_team_id": "11", "away_team_id": "12", "home_score": "0", "away_score": "1", "home_scorers": "null", "away_scorers": "{\"J. McGinn 28'\"}", "group": "C", "matchday": "1", "local_date": "06/13/2026 21:00", "persian_date": "1405-03-23 21:00", "stadium_id": "9", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Haiti", "home_team_name_fa": "هائیتی", "away_team_name_en": "Scotland", "away_team_name_fa": "اسکاتلند"}, {"_id": "679c9c8a5749c4077500e006", "id": "6", "home_team_id": "15", "away_team_id": "16", "home_score": "2", "away_score": "0", "home_scorers": "{\"Nestory Irankunda 27'\",\"C. Metcalfe 75'\"}", "away_scorers": "null", "group": "D", "matchday": "1", "local_date": "06/13/2026 21:00", "persian_date": "1405-03-23 21:00", "stadium_id": "13", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Australia", "home_team_name_fa": "استرالیا", "away_team_name_en": "Turkey", "away_team_name_fa": "ترکیه"}, {"_id": "679c9c8a5749c4077500e007", "id": "7", "home_team_id": "9", "away_team_id": "10", "home_score": "1", "away_score": "1", "home_scorers": "{\"V. Júnior 32'\"}", "away_scorers": "{\"I. Saibari 21'\"}", "group": "C", "matchday": "1", "local_date": "06/13/2026 18:00", "persian_date": "1405-03-23 18:00", "stadium_id": "11", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Brazil", "home_team_name_fa": "برزیل", "away_team_name_en": "Morocco", "away_team_name_fa": "مراکش"}, {"_id": "679c9c8a5749c4077500e008", "id": "8", "home_team_id": "7", "away_team_id": "8", "home_score": "1", "away_score": "1", "home_scorers": "{\"B. Khoukhi 90'+5'\"}", "away_scorers": "{\"Breel Embolo 17' (p)\"}", "group": "B", "matchday": "1", "local_date": "06/13/2026 12:00", "persian_date": "1405-03-23 12:00", "stadium_id": "15", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Qatar", "home_team_name_fa": "قطر", "away_team_name_en": "Switzerland", "away_team_name_fa": "سوئیس"}, {"_id": "679c9c8a5749c4077500e009", "id": "9", "home_team_id": "19", "away_team_id": "20", "home_score": "1", "away_score": "0", "home_scorers": "{\"A. Diallo 90'\"}", "away_scorers": "null", "group": "E", "matchday": "1", "local_date": "06/14/2026 19:00", "persian_date": "1405-03-24 19:00", "stadium_id": "10", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Ivory Coast", "home_team_name_fa": "ساحل عاج", "away_team_name_en": "Ecuador", "away_team_name_fa": "اکوادور"}, {"_id": "679c9c8a5749c4077500e010", "id": "10", "home_team_id": "17", "away_team_id": "18", "home_score": "7", "away_score": "1", "home_scorers": "{\"Felix Nmecha 7'\",\"N. Schlotterbeck 38'\",\"K. Havertz 45'+5'(p)\",\"J. Musiala 47'\",\"N. Brown 68'\",\"D. Undav 78'\",\"K. Havertz 88'\"}", "away_scorers": "{\"L. Comenencia 21'\"}", "group": "E", "matchday": "1", "local_date": "06/14/2026 12:00", "persian_date": "1405-03-24 12:00", "stadium_id": "5", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Germany", "home_team_name_fa": "آلمان", "away_team_name_en": "Curaçao", "away_team_name_fa": "کوراسائو"}, {"_id": "679c9c8a5749c4077500e011", "id": "11", "home_team_id": "21", "away_team_id": "22", "home_score": "2", "away_score": "2", "home_scorers": "{\"Virgil van Dijk 51'\",\"C. Summerville 64'\"}", "away_scorers": "{\"K. Nakamura 57'\",\"K. Ogawa 89'\"}", "group": "F", "matchday": "1", "local_date": "06/14/2026 15:00", "persian_date": "1405-03-24 15:00", "stadium_id": "4", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Netherlands", "home_team_name_fa": "هلند", "away_team_name_en": "Japan", "away_team_name_fa": "ژاپن"}, {"_id": "679c9c8a5749c4077500e012", "id": "12", "home_team_id": "23", "away_team_id": "24", "home_score": "5", "away_score": "1", "home_scorers": "{\"Y.Ayari 7'\",\"A. Isak 30'\",\"V. Gyökeres 59'\",\"M. Svanberg 84'\",\"Y.Ayari 90'+6'\"}", "away_scorers": "{\"O. Rekik 43'\"}", "group": "F", "matchday": "1", "local_date": "06/14/2026 20:00", "persian_date": "1405-03-24 20:00", "stadium_id": "3", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Sweden", "home_team_name_fa": "سوئد", "away_team_name_en": "Tunisia", "away_team_name_fa": "تونس"}, {"_id": "679c9c8a5749c4077500e013", "id": "13", "home_team_id": "27", "away_team_id": "28", "home_score": "2", "away_score": "2", "home_scorers": "{\"Ramin Rezaiian 32'\",\"Mohammad Mohebi 64'\"}", "away_scorers": "{\"Elijah Just 7'\",\"Elijah Just 54'\"}", "group": "G", "matchday": "1", "local_date": "06/15/2026 18:00", "persian_date": "1405-03-25 18:00", "stadium_id": "16", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Iran", "home_team_name_fa": "ایران", "away_team_name_en": "New Zealand", "away_team_name_fa": "نیوزیلند"}, {"_id": "679c9c8a5749c4077500e014", "id": "14", "home_team_id": "29", "away_team_id": "30", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "H", "matchday": "1", "local_date": "06/15/2026 12:00", "persian_date": "1405-03-25 12:00", "stadium_id": "7", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Spain", "home_team_name_fa": "اسپانیا", "away_team_name_en": "Cape Verde", "away_team_name_fa": "کیپ ورد"}, {"_id": "679c9c8a5749c4077500e015", "id": "15", "home_team_id": "25", "away_team_id": "26", "home_score": "1", "away_score": "1", "home_scorers": "{\"Mohamed Hany 66'\"}", "away_scorers": "{\"Emam Ashour 20'\"}", "group": "G", "matchday": "1", "local_date": "06/15/2026 12:00", "persian_date": "1405-03-25 12:00", "stadium_id": "14", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Belgium", "home_team_name_fa": "بلژیک", "away_team_name_en": "Egypt", "away_team_name_fa": "مصر"}, {"_id": "679c9c8a5749c4077500e016", "id": "16", "home_team_id": "31", "away_team_id": "32", "home_score": "1", "away_score": "1", "home_scorers": "{\"Abdulelah Al-Amri 41'\"}", "away_scorers": "{\"Maximiliano Araújo 80'\"}", "group": "H", "matchday": "1", "local_date": "06/15/2026 18:00", "persian_date": "1405-03-25 18:00", "stadium_id": "8", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Saudi Arabia", "home_team_name_fa": "عربستان", "away_team_name_en": "Uruguay", "away_team_name_fa": "اروگوئه"}, {"_id": "679c9c8a5749c4077500e017", "id": "17", "home_team_id": "33", "away_team_id": "34", "home_score": "3", "away_score": "1", "home_scorers": "{\"K. Mbappé 66'\",\"B. Barcola 82'\",\"K. Mbappé 90+6'\"}", "away_scorers": "{\"I. Mbaye 90+5'\"}", "group": "I", "matchday": "1", "local_date": "06/16/2026 15:00", "persian_date": "1405-03-26 15:00", "stadium_id": "11", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "France", "home_team_name_fa": "فرانسه", "away_team_name_en": "Senegal", "away_team_name_fa": "سنگال"}, {"_id": "679c9c8a5749c4077500e018", "id": "18", "home_team_id": "35", "away_team_id": "36", "home_score": "1", "away_score": "4", "home_scorers": "{\"Aymen Hussein 39'\"}", "away_scorers": "{\"Erling Haaland 29'\",\"Erling Haaland 43'\",\"Leo Østigård 76'\",\"Aymen Hussein 90+7'\"}", "group": "I", "matchday": "1", "local_date": "06/16/2026 18:00", "persian_date": "1405-03-26 18:00", "stadium_id": "9", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Iraq", "home_team_name_fa": "عراق", "away_team_name_en": "Norway", "away_team_name_fa": "نروژ"}, {"_id": "679c9c8a5749c4077500e019", "id": "19", "home_team_id": "37", "away_team_id": "38", "home_score": "3", "away_score": "0", "home_scorers": "{\"Lionel Messi 17'\",\"Lionel Messi 60'\",\"Lionel Messi 76'\"}", "away_scorers": "null", "group": "J", "matchday": "1", "local_date": "06/16/2026 20:00", "persian_date": "1405-03-26 20:00", "stadium_id": "6", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Argentina", "home_team_name_fa": "آرژانتین", "away_team_name_en": "Algeria", "away_team_name_fa": "الجزایر"}, {"_id": "679c9c8a5749c4077500e020", "id": "20", "home_team_id": "39", "away_team_id": "40", "home_score": "3", "away_score": "1", "home_scorers": "{\"Rvmanv Ashmid 21'\",\"Izn Alarb 76'\"}", "away_scorers": "{\"Ali Avlvan 50'\"}", "group": "J", "matchday": "1", "local_date": "06/16/2026 21:00", "persian_date": "1405-03-26 21:00", "stadium_id": "15", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Austria", "home_team_name_fa": "اتریش", "away_team_name_en": "Jordan", "away_team_name_fa": "اردن"}, {"_id": "679c9c8a5749c4077500e021", "id": "21", "home_team_id": "41", "away_team_id": "42", "home_score": "1", "away_score": "1", "home_scorers": "{\"J. Neves 6'\"}", "away_scorers": "{\"Y. Wissa 45+5'\"}", "group": "K", "matchday": "1", "local_date": "06/17/2026 12:00", "persian_date": "1405-03-27 12:00", "stadium_id": "5", "finished": "TRUE", "time_elapsed": "Finished", "type": "group", "home_team_name_en": "Portugal", "home_team_name_fa": "پرتغال", "away_team_name_en": "Democratic Republic of the Congo", "away_team_name_fa": "جمهوری دموکراتیک کنگو"}, {"_id": "679c9c8a5749c4077500e022", "id": "22", "home_team_id": "45", "away_team_id": "46", "home_score": "4", "away_score": "2", "home_scorers": "{\"H. Kane 12'(p)\",\"H. Kane 42'\",\"J. Bellingham 47'\",\"M. Rashford 85'\"}", "away_scorers": "{\"M. Baturina 36'\",\"P. Musa 45+5'\"}", "group": "L", "matchday": "1", "local_date": "06/17/2026 15:00", "persian_date": "1405-03-27 15:00", "stadium_id": "4", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "England", "home_team_name_fa": "انگلستان", "away_team_name_en": "Croatia", "away_team_name_fa": "کرواسی"}, {"_id": "679c9c8a5749c4077500e023", "id": "23", "home_team_id": "43", "away_team_id": "44", "home_score": "1", "away_score": "3", "home_scorers": "{\"Abas Bk Fiz Allh Af 60'\"}", "away_scorers": "{\"Dnil Mvnvz 40'\",\"Lviiz Diaz 65'\",\"Khamintvn Kampaz 90+9'\"}", "group": "K", "matchday": "1", "local_date": "06/17/2026 20:00", "persian_date": "1405-03-27 20:00", "stadium_id": "1", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Uzbekistan", "home_team_name_fa": "ازبکستان", "away_team_name_en": "Colombia", "away_team_name_fa": "کلمبیا"}, {"_id": "679c9c8a5749c4077500e024", "id": "24", "home_team_id": "47", "away_team_id": "48", "home_score": "1", "away_score": "0", "home_scorers": "{\"Kalb Iirnki 90+5'\"}", "away_scorers": "null", "group": "L", "matchday": "1", "local_date": "06/17/2026 19:00", "persian_date": "1405-03-27 19:00", "stadium_id": "12", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Ghana", "home_team_name_fa": "غنا", "away_team_name_en": "Panama", "away_team_name_fa": "پاناما"}, {"_id": "679c9c8a5749c4077500e025", "id": "25", "home_team_id": "1", "away_team_id": "3", "home_score": "1", "away_score": "0", "home_scorers": "{\"Luis Romo 50'\"}", "away_scorers": "null", "group": "A", "matchday": "2", "local_date": "06/18/2026 19:00", "persian_date": "1405-03-28 19:00", "stadium_id": "2", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Mexico", "home_team_name_fa": "مکزیک", "away_team_name_en": "South Korea", "away_team_name_fa": "کره جنوبی"}, {"_id": "679c9c8a5749c4077500e026", "id": "26", "home_team_id": "8", "away_team_id": "6", "home_score": "4", "away_score": "1", "home_scorers": "{\"Jvhan Mnzambi 74'\",\"Rvbn Vargas 84'\",\"Jvhan Mnzambi 90'\"}", "away_scorers": "{\"Armin Mhmich 90+3'\"}", "group": "B", "matchday": "2", "local_date": "06/18/2026 12:00", "persian_date": "1405-03-28 12:00", "stadium_id": "16", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Switzerland", "home_team_name_fa": "سوئیس", "away_team_name_en": "Bosnia and Herzegovina", "away_team_name_fa": "بوسنی و هرزگوین"}, {"_id": "679c9c8a5749c4077500e027", "id": "27", "home_team_id": "5", "away_team_id": "7", "home_score": "6", "away_score": "0", "home_scorers": "{\"Kail Larin 16'\",\"Jonathan David 29'\",\"Jonathan David 45+3'\",\"Nathan Saliba 64'\",\"Mohamed Almnai 75'\",\"Jonathan David 90+2'\"}", "away_scorers": "null", "group": "B", "matchday": "2", "local_date": "06/18/2026 15:00", "persian_date": "1405-03-28 15:00", "stadium_id": "13", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Canada", "home_team_name_fa": "کانادا", "away_team_name_en": "Qatar", "away_team_name_fa": "قطر"}, {"_id": "679c9c8a5749c4077500e028", "id": "28", "home_team_id": "4", "away_team_id": "2", "home_score": "1", "away_score": "1", "home_scorers": "{\"‫mikhal Sadilk 6'\"}", "away_scorers": "null", "group": "A", "matchday": "2", "local_date": "06/18/2026 12:00", "persian_date": "1405-03-28 12:00", "stadium_id": "7", "finished": "TRUE", "time_elapsed": "finished", "type": "group", "home_team_name_en": "Czech Republic", "home_team_name_fa": "جمهوری چک", "away_team_name_en": "South Africa", "away_team_name_fa": "آفریقای جنوبی"}, {"_id": "679c9c8a5749c4077500e029", "id": "29", "home_team_id": "9", "away_team_id": "11", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "C", "matchday": "2", "local_date": "06/19/2026 21:00", "persian_date": "1405-03-29 21:00", "stadium_id": "10", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Brazil", "home_team_name_fa": "برزیل", "away_team_name_en": "Haiti", "away_team_name_fa": "هائیتی"}, {"_id": "679c9c8a5749c4077500e030", "id": "30", "home_team_id": "12", "away_team_id": "10", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "C", "matchday": "2", "local_date": "06/19/2026 18:00", "persian_date": "1405-03-29 18:00", "stadium_id": "9", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Scotland", "home_team_name_fa": "اسکاتلند", "away_team_name_en": "Morocco", "away_team_name_fa": "مراکش"}, {"_id": "679c9c8a5749c4077500e031", "id": "31", "home_team_id": "13", "away_team_id": "15", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "D", "matchday": "2", "local_date": "06/19/2026 12:00", "persian_date": "1405-03-29 12:00", "stadium_id": "14", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "United States", "home_team_name_fa": "آمریکا", "away_team_name_en": "Australia", "away_team_name_fa": "استرالیا"}, {"_id": "679c9c8a5749c4077500e032", "id": "32", "home_team_id": "16", "away_team_id": "14", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "D", "matchday": "2", "local_date": "06/19/2026 20:00", "persian_date": "1405-03-29 20:00", "stadium_id": "15", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Turkey", "home_team_name_fa": "ترکیه", "away_team_name_en": "Paraguay", "away_team_name_fa": "پاراگوئه"}, {"_id": "679c9c8a5749c4077500e033", "id": "33", "home_team_id": "17", "away_team_id": "19", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "E", "matchday": "2", "local_date": "06/20/2026 16:00", "persian_date": "1405-03-30 16:00", "stadium_id": "12", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Germany", "home_team_name_fa": "آلمان", "away_team_name_en": "Ivory Coast", "away_team_name_fa": "ساحل عاج"}, {"_id": "679c9c8a5749c4077500e034", "id": "34", "home_team_id": "20", "away_team_id": "18", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "E", "matchday": "2", "local_date": "06/20/2026 19:00", "persian_date": "1405-03-30 19:00", "stadium_id": "6", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Ecuador", "home_team_name_fa": "اکوادور", "away_team_name_en": "Curaçao", "away_team_name_fa": "کوراسائو"}, {"_id": "679c9c8a5749c4077500e035", "id": "35", "home_team_id": "21", "away_team_id": "23", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "F", "matchday": "2", "local_date": "06/20/2026 12:00", "persian_date": "1405-03-30 12:00", "stadium_id": "5", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Netherlands", "home_team_name_fa": "هلند", "away_team_name_en": "Sweden", "away_team_name_fa": "سوئد"}, {"_id": "679c9c8a5749c4077500e036", "id": "36", "home_team_id": "24", "away_team_id": "22", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "F", "matchday": "2", "local_date": "06/20/2026 22:00", "persian_date": "1405-03-30 22:00", "stadium_id": "3", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Tunisia", "home_team_name_fa": "تونس", "away_team_name_en": "Japan", "away_team_name_fa": "ژاپن"}, {"_id": "679c9c8a5749c4077500e037", "id": "37", "home_team_id": "25", "away_team_id": "27", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "G", "matchday": "2", "local_date": "06/21/2026 12:00", "persian_date": "1405-03-31 12:00", "stadium_id": "16", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Belgium", "home_team_name_fa": "بلژیک", "away_team_name_en": "Iran", "away_team_name_fa": "ایران"}, {"_id": "679c9c8a5749c4077500e038", "id": "38", "home_team_id": "28", "away_team_id": "26", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "G", "matchday": "2", "local_date": "06/21/2026 18:00", "persian_date": "1405-03-31 18:00", "stadium_id": "13", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "New Zealand", "home_team_name_fa": "نیوزیلند", "away_team_name_en": "Egypt", "away_team_name_fa": "مصر"}, {"_id": "679c9c8a5749c4077500e039", "id": "39", "home_team_id": "29", "away_team_id": "31", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "H", "matchday": "2", "local_date": "06/21/2026 12:00", "persian_date": "1405-03-31 12:00", "stadium_id": "7", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Spain", "home_team_name_fa": "اسپانیا", "away_team_name_en": "Saudi Arabia", "away_team_name_fa": "عربستان"}, {"_id": "679c9c8a5749c4077500e040", "id": "40", "home_team_id": "32", "away_team_id": "30", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "H", "matchday": "2", "local_date": "06/21/2026 18:00", "persian_date": "1405-03-31 18:00", "stadium_id": "8", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Uruguay", "home_team_name_fa": "اروگوئه", "away_team_name_en": "Cape Verde", "away_team_name_fa": "کیپ ورد"}, {"_id": "679c9c8a5749c4077500e041", "id": "41", "home_team_id": "33", "away_team_id": "35", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "I", "matchday": "2", "local_date": "06/22/2026 17:00", "persian_date": "1405-04-01 17:00", "stadium_id": "10", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "France", "home_team_name_fa": "فرانسه", "away_team_name_en": "Iraq", "away_team_name_fa": "عراق"}, {"_id": "679c9c8a5749c4077500e042", "id": "42", "home_team_id": "36", "away_team_id": "34", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "I", "matchday": "2", "local_date": "06/22/2026 20:00", "persian_date": "1405-04-01 20:00", "stadium_id": "11", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Norway", "home_team_name_fa": "نروژ", "away_team_name_en": "Senegal", "away_team_name_fa": "سنگال"}, {"_id": "679c9c8a5749c4077500e043", "id": "43", "home_team_id": "37", "away_team_id": "39", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "J", "matchday": "2", "local_date": "06/22/2026 12:00", "persian_date": "1405-04-01 12:00", "stadium_id": "4", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Argentina", "home_team_name_fa": "آرژانتین", "away_team_name_en": "Austria", "away_team_name_fa": "اتریش"}, {"_id": "679c9c8a5749c4077500e044", "id": "44", "home_team_id": "40", "away_team_id": "38", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "J", "matchday": "2", "local_date": "06/22/2026 20:00", "persian_date": "1405-04-01 20:00", "stadium_id": "15", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Jordan", "home_team_name_fa": "اردن", "away_team_name_en": "Algeria", "away_team_name_fa": "الجزایر"}, {"_id": "679c9c8a5749c4077500e045", "id": "45", "home_team_id": "41", "away_team_id": "43", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "K", "matchday": "2", "local_date": "06/23/2026 12:00", "persian_date": "1405-04-02 12:00", "stadium_id": "5", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Portugal", "home_team_name_fa": "پرتغال", "away_team_name_en": "Uzbekistan", "away_team_name_fa": "ازبکستان"}, {"_id": "679c9c8a5749c4077500e046", "id": "46", "home_team_id": "48", "away_team_id": "46", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "L", "matchday": "2", "local_date": "06/23/2026 19:00", "persian_date": "1405-04-02 19:00", "stadium_id": "12", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Panama", "home_team_name_fa": "پاناما", "away_team_name_en": "Croatia", "away_team_name_fa": "کرواسی"}, {"_id": "679c9c8a5749c4077500e047", "id": "47", "home_team_id": "44", "away_team_id": "42", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "K", "matchday": "2", "local_date": "06/23/2026 20:00", "persian_date": "1405-04-02 20:00", "stadium_id": "2", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Colombia", "home_team_name_fa": "کلمبیا", "away_team_name_en": "Democratic Republic of the Congo", "away_team_name_fa": "جمهوری دموکراتیک کنگو"}, {"_id": "679c9c8a5749c4077500e048", "id": "48", "home_team_id": "45", "away_team_id": "47", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "L", "matchday": "2", "local_date": "06/23/2026 16:00", "persian_date": "1405-04-02 16:00", "stadium_id": "9", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "England", "home_team_name_fa": "انگلستان", "away_team_name_en": "Ghana", "away_team_name_fa": "غنا"}, {"_id": "679c9c8a5749c4077500e049", "id": "49", "home_team_id": "12", "away_team_id": "9", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "C", "matchday": "3", "local_date": "06/24/2026 18:00", "persian_date": "1405-04-03 18:00", "stadium_id": "8", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Scotland", "home_team_name_fa": "اسکاتلند", "away_team_name_en": "Brazil", "away_team_name_fa": "برزیل"}, {"_id": "679c9c8a5749c4077500e050", "id": "50", "home_team_id": "10", "away_team_id": "11", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "C", "matchday": "3", "local_date": "06/24/2026 18:00", "persian_date": "1405-04-03 18:00", "stadium_id": "7", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Morocco", "home_team_name_fa": "مراکش", "away_team_name_en": "Haiti", "away_team_name_fa": "هائیتی"}, {"_id": "679c9c8a5749c4077500e051", "id": "51", "home_team_id": "2", "away_team_id": "3", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "A", "matchday": "3", "local_date": "06/24/2026 19:00", "persian_date": "1405-04-03 19:00", "stadium_id": "3", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "South Africa", "home_team_name_fa": "آفریقای جنوبی", "away_team_name_en": "South Korea", "away_team_name_fa": "کره جنوبی"}, {"_id": "679c9c8a5749c4077500e052", "id": "52", "home_team_id": "4", "away_team_id": "1", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "A", "matchday": "3", "local_date": "06/24/2026 19:00", "persian_date": "1405-04-03 19:00", "stadium_id": "1", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Czech Republic", "home_team_name_fa": "جمهوری چک", "away_team_name_en": "Mexico", "away_team_name_fa": "مکزیک"}, {"_id": "679c9c8a5749c4077500e053", "id": "53", "home_team_id": "6", "away_team_id": "7", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "B", "matchday": "3", "local_date": "06/24/2026 12:00", "persian_date": "1405-04-03 12:00", "stadium_id": "14", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Bosnia and Herzegovina", "home_team_name_fa": "بوسنی و هرزگوین", "away_team_name_en": "Qatar", "away_team_name_fa": "قطر"}, {"_id": "679c9c8a5749c4077500e054", "id": "54", "home_team_id": "8", "away_team_id": "5", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "B", "matchday": "3", "local_date": "06/24/2026 12:00", "persian_date": "1405-04-03 12:00", "stadium_id": "13", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Switzerland", "home_team_name_fa": "سوئیس", "away_team_name_en": "Canada", "away_team_name_fa": "کانادا"}, {"_id": "679c9c8a5749c4077500e055", "id": "55", "home_team_id": "18", "away_team_id": "19", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "E", "matchday": "3", "local_date": "06/25/2026 16:00", "persian_date": "1405-04-04 16:00", "stadium_id": "10", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Curaçao", "home_team_name_fa": "کوراسائو", "away_team_name_en": "Ivory Coast", "away_team_name_fa": "ساحل عاج"}, {"_id": "679c9c8a5749c4077500e056", "id": "56", "home_team_id": "20", "away_team_id": "17", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "E", "matchday": "3", "local_date": "06/25/2026 16:00", "persian_date": "1405-04-04 16:00", "stadium_id": "11", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Ecuador", "home_team_name_fa": "اکوادور", "away_team_name_en": "Germany", "away_team_name_fa": "آلمان"}, {"_id": "679c9c8a5749c4077500e057", "id": "57", "home_team_id": "14", "away_team_id": "15", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "D", "matchday": "3", "local_date": "06/25/2026 19:00", "persian_date": "1405-04-04 19:00", "stadium_id": "15", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Paraguay", "home_team_name_fa": "پاراگوئه", "away_team_name_en": "Australia", "away_team_name_fa": "استرالیا"}, {"_id": "679c9c8a5749c4077500e058", "id": "58", "home_team_id": "16", "away_team_id": "13", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "D", "matchday": "3", "local_date": "06/25/2026 19:00", "persian_date": "1405-04-04 19:00", "stadium_id": "16", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Turkey", "home_team_name_fa": "ترکیه", "away_team_name_en": "United States", "away_team_name_fa": "آمریکا"}, {"_id": "679c9c8a5749c4077500e059", "id": "59", "home_team_id": "22", "away_team_id": "23", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "F", "matchday": "3", "local_date": "06/25/2026 18:00", "persian_date": "1405-04-04 18:00", "stadium_id": "4", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Japan", "home_team_name_fa": "ژاپن", "away_team_name_en": "Sweden", "away_team_name_fa": "سوئد"}, {"_id": "679c9c8a5749c4077500e060", "id": "60", "home_team_id": "24", "away_team_id": "21", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "F", "matchday": "3", "local_date": "06/25/2026 18:00", "persian_date": "1405-04-04 18:00", "stadium_id": "6", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Tunisia", "home_team_name_fa": "تونس", "away_team_name_en": "Netherlands", "away_team_name_fa": "هلند"}, {"_id": "679c9c8a5749c4077500e061", "id": "61", "home_team_id": "34", "away_team_id": "35", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "I", "matchday": "3", "local_date": "06/26/2026 15:00", "persian_date": "1405-04-05 15:00", "stadium_id": "12", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Senegal", "home_team_name_fa": "سنگال", "away_team_name_en": "Iraq", "away_team_name_fa": "عراق"}, {"_id": "679c9c8a5749c4077500e062", "id": "62", "home_team_id": "36", "away_team_id": "33", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "I", "matchday": "3", "local_date": "06/26/2026 15:00", "persian_date": "1405-04-05 15:00", "stadium_id": "9", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Norway", "home_team_name_fa": "نروژ", "away_team_name_en": "France", "away_team_name_fa": "فرانسه"}, {"_id": "679c9c8a5749c4077500e063", "id": "63", "home_team_id": "26", "away_team_id": "27", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "G", "matchday": "3", "local_date": "06/26/2026 20:00", "persian_date": "1405-04-05 20:00", "stadium_id": "14", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Egypt", "home_team_name_fa": "مصر", "away_team_name_en": "Iran", "away_team_name_fa": "ایران"}, {"_id": "679c9c8a5749c4077500e064", "id": "64", "home_team_id": "28", "away_team_id": "25", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "G", "matchday": "3", "local_date": "06/26/2026 20:00", "persian_date": "1405-04-05 20:00", "stadium_id": "13", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "New Zealand", "home_team_name_fa": "نیوزیلند", "away_team_name_en": "Belgium", "away_team_name_fa": "بلژیک"}, {"_id": "679c9c8a5749c4077500e065", "id": "65", "home_team_id": "30", "away_team_id": "31", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "H", "matchday": "3", "local_date": "06/26/2026 19:00", "persian_date": "1405-04-05 19:00", "stadium_id": "5", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Cape Verde", "home_team_name_fa": "کیپ ورد", "away_team_name_en": "Saudi Arabia", "away_team_name_fa": "عربستان"}, {"_id": "679c9c8a5749c4077500e066", "id": "66", "home_team_id": "32", "away_team_id": "29", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "H", "matchday": "3", "local_date": "06/26/2026 18:00", "persian_date": "1405-04-05 18:00", "stadium_id": "2", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Uruguay", "home_team_name_fa": "اروگوئه", "away_team_name_en": "Spain", "away_team_name_fa": "اسپانیا"}, {"_id": "679c9c8a5749c4077500e067", "id": "67", "home_team_id": "48", "away_team_id": "45", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "L", "matchday": "3", "local_date": "06/27/2026 17:00", "persian_date": "1405-04-06 17:00", "stadium_id": "11", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Panama", "home_team_name_fa": "پاناما", "away_team_name_en": "England", "away_team_name_fa": "انگلستان"}, {"_id": "679c9c8a5749c4077500e068", "id": "68", "home_team_id": "46", "away_team_id": "47", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "L", "matchday": "3", "local_date": "06/27/2026 17:00", "persian_date": "1405-04-06 17:00", "stadium_id": "10", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Croatia", "home_team_name_fa": "کرواسی", "away_team_name_en": "Ghana", "away_team_name_fa": "غنا"}, {"_id": "679c9c8a5749c4077500e069", "id": "69", "home_team_id": "38", "away_team_id": "39", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "J", "matchday": "3", "local_date": "06/27/2026 21:00", "persian_date": "1405-04-06 21:00", "stadium_id": "6", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Algeria", "home_team_name_fa": "الجزایر", "away_team_name_en": "Austria", "away_team_name_fa": "اتریش"}, {"_id": "679c9c8a5749c4077500e070", "id": "70", "home_team_id": "40", "away_team_id": "37", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "J", "matchday": "3", "local_date": "06/27/2026 21:00", "persian_date": "1405-04-06 21:00", "stadium_id": "4", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Jordan", "home_team_name_fa": "اردن", "away_team_name_en": "Argentina", "away_team_name_fa": "آرژانتین"}, {"_id": "679c9c8a5749c4077500e071", "id": "71", "home_team_id": "44", "away_team_id": "41", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "K", "matchday": "3", "local_date": "06/27/2026 19:30", "persian_date": "1405-04-06 19:30", "stadium_id": "8", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Colombia", "home_team_name_fa": "کلمبیا", "away_team_name_en": "Portugal", "away_team_name_fa": "پرتغال"}, {"_id": "679c9c8a5749c4077500e072", "id": "72", "home_team_id": "42", "away_team_id": "43", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "K", "matchday": "3", "local_date": "06/27/2026 19:30", "persian_date": "1405-04-06 19:30", "stadium_id": "7", "finished": "FALSE", "time_elapsed": "notstarted", "type": "group", "home_team_name_en": "Democratic Republic of the Congo", "home_team_name_fa": "جمهوری دموکراتیک کنگو", "away_team_name_en": "Uzbekistan", "away_team_name_fa": "ازبکستان"}, {"_id": "679c9c8a5749c4077500e073", "id": "73", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "06/28/2026 12:00", "persian_date": "1405-04-07 12:00", "stadium_id": "16", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Runner-up Group A", "away_team_label": "Runner-up Group B"}, {"_id": "679c9c8a5749c4077500e074", "id": "74", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "06/29/2026 16:30", "persian_date": "1405-04-08 16:30", "stadium_id": "9", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group E", "away_team_label": "3rd Group A/B/C/D/F"}, {"_id": "679c9c8a5749c4077500e075", "id": "75", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "06/29/2026 19:00", "persian_date": "1405-04-08 19:00", "stadium_id": "3", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group F", "away_team_label": "Runner-up Group C"}, {"_id": "679c9c8a5749c4077500e076", "id": "76", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "06/29/2026 12:00", "persian_date": "1405-04-08 12:00", "stadium_id": "5", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group C", "away_team_label": "Runner-up Group F"}, {"_id": "679c9c8a5749c4077500e077", "id": "77", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "06/30/2026 17:00", "persian_date": "1405-04-09 17:00", "stadium_id": "11", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group I", "away_team_label": "3rd Group C/D/F/G/H"}, {"_id": "679c9c8a5749c4077500e078", "id": "78", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "06/30/2026 12:00", "persian_date": "1405-04-09 12:00", "stadium_id": "4", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Runner-up Group E", "away_team_label": "Runner-up Group I"}, {"_id": "679c9c8a5749c4077500e079", "id": "79", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "06/30/2026 19:00", "persian_date": "1405-04-09 19:00", "stadium_id": "1", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group A", "away_team_label": "3rd Group C/E/F/H/I"}, {"_id": "679c9c8a5749c4077500e07a", "id": "80", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/01/2026 12:00", "persian_date": "1405-04-10 12:00", "stadium_id": "7", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group L", "away_team_label": "3rd Group E/H/I/J/K"}, {"_id": "679c9c8a5749c4077500e07b", "id": "81", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/01/2026 17:00", "persian_date": "1405-04-10 17:00", "stadium_id": "15", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group D", "away_team_label": "3rd Group B/E/F/I/J"}, {"_id": "679c9c8a5749c4077500e07c", "id": "82", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/01/2026 13:00", "persian_date": "1405-04-10 13:00", "stadium_id": "14", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group G", "away_team_label": "3rd Group A/E/H/I/J"}, {"_id": "679c9c8a5749c4077500e07d", "id": "83", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/02/2026 19:00", "persian_date": "1405-04-11 19:00", "stadium_id": "12", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Runner-up Group K", "away_team_label": "Runner-up Group L"}, {"_id": "679c9c8a5749c4077500e07e", "id": "84", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/02/2026 12:00", "persian_date": "1405-04-11 12:00", "stadium_id": "16", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group H", "away_team_label": "Runner-up Group J"}, {"_id": "679c9c8a5749c4077500e07f", "id": "85", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/02/2026 20:00", "persian_date": "1405-04-11 20:00", "stadium_id": "13", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group B", "away_team_label": "3rd Group E/F/G/I/J"}, {"_id": "679c9c8a5749c4077500e080", "id": "86", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/03/2026 18:00", "persian_date": "1405-04-12 18:00", "stadium_id": "8", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group J", "away_team_label": "Runner-up Group H"}, {"_id": "679c9c8a5749c4077500e081", "id": "87", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/03/2026 20:30", "persian_date": "1405-04-12 20:30", "stadium_id": "6", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Winner Group K", "away_team_label": "3rd Group D/E/I/J/L"}, {"_id": "679c9c8a5749c4077500e082", "id": "88", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R32", "matchday": "4", "local_date": "07/03/2026 13:00", "persian_date": "1405-04-12 13:00", "stadium_id": "4", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r32", "home_team_label": "Runner-up Group D", "away_team_label": "Runner-up Group G"}, {"_id": "679c9c8a5749c4077500e083", "id": "89", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R16", "matchday": "5", "local_date": "07/04/2026 17:00", "persian_date": "1405-04-13 17:00", "stadium_id": "10", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r16", "home_team_label": "Winner Match 74", "away_team_label": "Winner Match 77"}, {"_id": "679c9c8a5749c4077500e084", "id": "90", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R16", "matchday": "5", "local_date": "07/04/2026 12:00", "persian_date": "1405-04-13 12:00", "stadium_id": "5", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r16", "home_team_label": "Winner Match 73", "away_team_label": "Winner Match 75"}, {"_id": "679c9c8a5749c4077500e085", "id": "91", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R16", "matchday": "5", "local_date": "07/05/2026 16:00", "persian_date": "1405-04-14 16:00", "stadium_id": "11", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r16", "home_team_label": "Winner Match 76", "away_team_label": "Winner Match 78"}, {"_id": "679c9c8a5749c4077500e086", "id": "92", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R16", "matchday": "5", "local_date": "07/05/2026 18:00", "persian_date": "1405-04-14 18:00", "stadium_id": "1", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r16", "home_team_label": "Winner Match 79", "away_team_label": "Winner Match 80"}, {"_id": "679c9c8a5749c4077500e087", "id": "93", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R16", "matchday": "5", "local_date": "07/06/2026 14:00", "persian_date": "1405-04-15 14:00", "stadium_id": "4", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r16", "home_team_label": "Winner Match 83", "away_team_label": "Winner Match 84"}, {"_id": "679c9c8a5749c4077500e088", "id": "94", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R16", "matchday": "5", "local_date": "07/06/2026 17:00", "persian_date": "1405-04-15 17:00", "stadium_id": "14", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r16", "home_team_label": "Winner Match 81", "away_team_label": "Winner Match 82"}, {"_id": "679c9c8a5749c4077500e089", "id": "95", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R16", "matchday": "5", "local_date": "07/07/2026 12:00", "persian_date": "1405-04-16 12:00", "stadium_id": "7", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r16", "home_team_label": "Winner Match 86", "away_team_label": "Winner Match 88"}, {"_id": "679c9c8a5749c4077500e08a", "id": "96", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "R16", "matchday": "5", "local_date": "07/07/2026 13:00", "persian_date": "1405-04-16 13:00", "stadium_id": "13", "finished": "FALSE", "time_elapsed": "notstarted", "type": "r16", "home_team_label": "Winner Match 85", "away_team_label": "Winner Match 87"}, {"_id": "679c9c8a5749c4077500e08b", "id": "97", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "QF", "matchday": "6", "local_date": "07/09/2026 16:00", "persian_date": "1405-04-18 16:00", "stadium_id": "9", "finished": "FALSE", "time_elapsed": "notstarted", "type": "qf", "home_team_label": "Winner Match 89", "away_team_label": "Winner Match 90"}, {"_id": "679c9c8a5749c4077500e08c", "id": "98", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "QF", "matchday": "6", "local_date": "07/10/2026 12:00", "persian_date": "1405-04-19 12:00", "stadium_id": "16", "finished": "FALSE", "time_elapsed": "notstarted", "type": "qf", "home_team_label": "Winner Match 93", "away_team_label": "Winner Match 94"}, {"_id": "679c9c8a5749c4077500e08d", "id": "99", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "QF", "matchday": "6", "local_date": "07/11/2026 17:00", "persian_date": "1405-04-20 17:00", "stadium_id": "8", "finished": "FALSE", "time_elapsed": "notstarted", "type": "qf", "home_team_label": "Winner Match 91", "away_team_label": "Winner Match 92"}, {"_id": "679c9c8a5749c4077500e08e", "id": "100", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "QF", "matchday": "6", "local_date": "07/11/2026 20:00", "persian_date": "1405-04-20 20:00", "stadium_id": "6", "finished": "FALSE", "time_elapsed": "notstarted", "type": "qf", "home_team_label": "Winner Match 95", "away_team_label": "Winner Match 96"}, {"_id": "679c9c8a5749c4077500e08f", "id": "101", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "SF", "matchday": "7", "local_date": "07/14/2026 14:00", "persian_date": "1405-04-23 14:00", "stadium_id": "4", "finished": "FALSE", "time_elapsed": "notstarted", "type": "sf", "home_team_label": "Winner Match 97", "away_team_label": "Winner Match 98"}, {"_id": "679c9c8a5749c4077500e090", "id": "102", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "SF", "matchday": "7", "local_date": "07/15/2026 15:00", "persian_date": "1405-04-24 15:00", "stadium_id": "7", "finished": "FALSE", "time_elapsed": "notstarted", "type": "sf", "home_team_label": "Winner Match 99", "away_team_label": "Winner Match 100"}, {"_id": "679c9c8a5749c4077500e091", "id": "103", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "3RD", "matchday": "8", "local_date": "07/18/2026 17:00", "persian_date": "1405-04-27 17:00", "stadium_id": "8", "finished": "FALSE", "time_elapsed": "notstarted", "type": "third", "home_team_label": "Loser Match 101", "away_team_label": "Loser Match 102"}, {"_id": "679c9c8a5749c4077500e092", "id": "104", "home_team_id": "0", "away_team_id": "0", "home_score": "0", "away_score": "0", "home_scorers": "null", "away_scorers": "null", "group": "FINAL", "matchday": "9", "local_date": "07/19/2026 15:00", "persian_date": "1405-04-28 15:00", "stadium_id": "11", "finished": "FALSE", "time_elapsed": "notstarted", "type": "final", "home_team_label": "Winner Match 101", "away_team_label": "Winner Match 102"}]},
+  time: Date.now()
+};
+
+</script>
+
+<!-- 预置统计数据：助攻/红黄牌 -->
+<script>
+
+// ===== 预置统计（ESPN全28场已完成比赛，打包于2026-06-19）=====
+const BUNDLED_STATS = {
+  assists: [{"player": "Alexander Isak", "team": "Sweden", "count": 2}, {"player": "Chris Wood", "team": "New Zealand", "count": 2}, {"player": "Deniz Undav", "team": "Germany", "count": 2}, {"player": "Joshua Kimmich", "team": "Germany", "count": 2}, {"player": "Ryan Gravenberch", "team": "Netherlands", "count": 2}, {"player": "Adrien Rabiot", "team": "France", "count": 1}, {"player": "Alex Freeman", "team": "United States", "count": 1}, {"player": "Alexandr Sojka", "team": "Czech Republic", "count": 1}, {"player": "Amir Al Ammari", "team": "Iraq", "count": 1}, {"player": "Arthur Masuaku", "team": "Democratic Republic of the Congo", "count": 1}, {"player": "Brahim Díaz", "team": "Morocco", "count": 1}, {"player": "Brandon Thomas-Asante", "team": "Ghana", "count": 1}, {"player": "Breel Embolo", "team": "Switzerland", "count": 1}, {"player": "Bruno Guimarães", "team": "Brazil", "count": 1}, {"player": "Bukayo Saka", "team": "England", "count": 1}, {"player": "Christian Pulisic", "team": "United States", "count": 1}, {"player": "Cucho Hernández", "team": "Colombia", "count": 1}, {"player": "David Møller Wolfe", "team": "Norway", "count": 1}, {"player": "Declan Rice", "team": "England", "count": 1}, {"player": "Elliot Anderson", "team": "England", "count": 1}, {"player": "Florian Wirtz", "team": "Germany", "count": 1}, {"player": "Gustavo Puerta", "team": "Colombia", "count": 1}, {"player": "Hannibal Mejbri", "team": "Tunisia", "count": 1}, {"player": "Hwang In-Beom", "team": "South Korea", "count": 1}, {"player": "Iliman Ndiaye", "team": "Senegal", "count": 1}, {"player": "Ivan Perisic", "team": "Croatia", "count": 1}, {"player": "Julio Enciso", "team": "Paraguay", "count": 1}, {"player": "Koki Ogawa", "team": "Japan", "count": 1}, {"player": "Lee Kang-In", "team": "South Korea", "count": 1}, {"player": "Lucas Bergvall", "team": "Sweden", "count": 1}, {"player": "Luis Díaz", "team": "Colombia", "count": 1}, {"player": "Malik Tillman", "team": "United States", "count": 1}, {"player": "Martin Ødegaard", "team": "Norway", "count": 1}, {"player": "Michael Olise", "team": "France", "count": 1}, {"player": "Mohamed Salah", "team": "Egypt", "count": 1}, {"player": "Nathan Saliba", "team": "Canada", "count": 1}, {"player": "Nathaniel Brown", "team": "Germany", "count": 1}, {"player": "Nico González", "team": "Argentina", "count": 1}, {"player": "Noor Al Rawabdeh", "team": "Jordan", "count": 1}, {"player": "Paul Okon-Engstler", "team": "Australia", "count": 1}, {"player": "Pedro Neto", "team": "Portugal", "count": 1}, {"player": "Petar Sucic", "team": "Croatia", "count": 1}, {"player": "Promise David", "team": "Canada", "count": 1}, {"player": "Ramin Rezaeian", "team": "Iran", "count": 1}, {"player": "Roberto Alvarado", "team": "Mexico", "count": 1}, {"player": "Rodrigo De Paul", "team": "Argentina", "count": 1}, {"player": "Rubén Vargas", "team": "Switzerland", "count": 1}, {"player": "Sead Kolasinac", "team": "Bosnia and Herzegovina", "count": 1}, {"player": "Takefusa Kubo", "team": "Japan", "count": 1}, {"player": "Viktor Gyökeres", "team": "Sweden", "count": 1}, {"player": "Vladimír Coufal", "team": "Czech Republic", "count": 1}, {"player": "Wilfried Singo", "team": "Ivory Coast", "count": 1}, {"player": "Xaver Schlager", "team": "Austria", "count": 1}, {"player": "Érik Lira", "team": "Mexico", "count": 1}],
+  yellowCards: [{"player": "Teboho Mokoena", "team": "South Africa", "count": 2}, {"player": "Aaron Hickey", "team": "Scotland", "count": 1}, {"player": "Abdukodir Khusanov", "team": "Uzbekistan", "count": 1}, {"player": "Abdulelah Al Amri", "team": "Saudi Arabia", "count": 1}, {"player": "Ahmed Fathy", "team": "Qatar", "count": 1}, {"player": "Ahmed Fatouh", "team": "Egypt", "count": 1}, {"player": "Alistair Johnston", "team": "Canada", "count": 1}, {"player": "Amar Dedic", "team": "Bosnia and Herzegovina", "count": 1}, {"player": "Bernardo Silva", "team": "Portugal", "count": 1}, {"player": "Brian Gutiérrez", "team": "Mexico", "count": 1}, {"player": "Caleb Yirenkyi", "team": "Ghana", "count": 1}, {"player": "Carlos Harvey", "team": "Panama", "count": 1}, {"player": "Casemiro", "team": "Brazil", "count": 1}, {"player": "Chancel Mbemba", "team": "Democratic Republic of the Congo", "count": 1}, {"player": "Crysencio Summerville", "team": "Netherlands", "count": 1}, {"player": "César Blackman", "team": "Panama", "count": 1}, {"player": "Denis Zakaria", "team": "Switzerland", "count": 1}, {"player": "Derek Cornelius", "team": "Canada", "count": 1}, {"player": "Diego Gómez", "team": "Paraguay", "count": 1}, {"player": "Edin Dzeko", "team": "Bosnia and Herzegovina", "count": 1}, {"player": "Ehsan Hajisafi", "team": "Iran", "count": 1}, {"player": "Ermedin Demirovic", "team": "Bosnia and Herzegovina", "count": 1}, {"player": "Findlay Curtis", "team": "Scotland", "count": 1}, {"player": "Franck Kessie", "team": "Ivory Coast", "count": 1}, {"player": "Guéla Doué", "team": "Ivory Coast", "count": 1}, {"player": "Jackson Porozo", "team": "Ecuador", "count": 1}, {"player": "Jassem Gaber", "team": "Qatar", "count": 1}, {"player": "Jean-Ricner Bellegarde", "team": "Haiti", "count": 1}, {"player": "Johan Mojica", "team": "Colombia", "count": 1}, {"player": "Jovo Lukic", "team": "Bosnia and Herzegovina", "count": 1}, {"player": "Juan José Cáceres", "team": "Paraguay", "count": 1}, {"player": "Júnior Alonso", "team": "Paraguay", "count": 1}, {"player": "Kenny McLean", "team": "Scotland", "count": 1}, {"player": "Ladislav Krejcí", "team": "Czech Republic", "count": 1}, {"player": "Lee Gi-Hyuk", "team": "South Korea", "count": 1}, {"player": "Lee Kang-In", "team": "South Korea", "count": 1}, {"player": "Luc De Fougerolles", "team": "Canada", "count": 1}, {"player": "Mahmoud Abunada", "team": "Qatar", "count": 1}, {"player": "Marcel Sabitzer", "team": "Austria", "count": 1}, {"player": "Marwan Attia", "team": "Egypt", "count": 1}, {"player": "Maxim De Cuyper", "team": "Belgium", "count": 1}, {"player": "Memphis Depay", "team": "Netherlands", "count": 1}, {"player": "Micky van de Ven", "team": "Netherlands", "count": 1}, {"player": "Miguel Almirón", "team": "Paraguay", "count": 1}, {"player": "Nico Elvedi", "team": "Switzerland", "count": 1}, {"player": "Nikola Katic", "team": "Bosnia and Herzegovina", "count": 1}, {"player": "Nkosinathi Sibisi", "team": "South Africa", "count": 1}, {"player": "Nélson Semedo", "team": "Portugal", "count": 1}, {"player": "Paik Seung-Ho", "team": "South Korea", "count": 1}, {"player": "Pedri", "team": "Spain", "count": 1}, {"player": "Rani Khedira", "team": "Tunisia", "count": 1}, {"player": "Roger Ibañez", "team": "Brazil", "count": 1}, {"player": "Seko Fofana", "team": "Ivory Coast", "count": 1}, {"player": "Sidny Cabral", "team": "Cape Verde", "count": 1}, {"player": "Thalente Mbatha", "team": "South Africa", "count": 1}, {"player": "Timothy Castagne", "team": "Belgium", "count": 1}, {"player": "Tomás Araújo", "team": "Portugal", "count": 1}, {"player": "Tyler Adams", "team": "United States", "count": 1}, {"player": "Yunus Akgün", "team": "Turkey", "count": 1}, {"player": "Zaid Tahseen", "team": "Iraq", "count": 1}, {"player": "Álex Arce", "team": "Paraguay", "count": 1}],
+  redCards: [{"player": "Assim Madibo", "team": "Qatar", "count": 1}, {"player": "César Montes", "team": "Mexico", "count": 1}, {"player": "Homam El Amin", "team": "Qatar", "count": 1}, {"player": "Tarik Muharemovic", "team": "Bosnia and Herzegovina", "count": 1}, {"player": "Themba Zwane", "team": "South Africa", "count": 1}, {"player": "Yaya Sithole", "team": "South Africa", "count": 1}],
+  _v: 3
+};
+
+</script>
+
+<script>
+// ==================== 数据层 ====================
+
+// —— 48支球队身价（欧元，静态数据来源 Transfermarkt）——
+const MARKET_VALUES = {
+  "France": 1520000000, "England": 1360000000, "Spain": 1220000000,
+  "Portugal": 1010000000, "Germany": 947000000, "Brazil": 928000000,
+  "Argentina": 808000000, "Netherlands": 754000000, "Norway": 590000000,
+  "Belgium": 548000000, "Ivory Coast": 522000000, "Senegal": 478000000,
+  "Turkey": 474000000, "Morocco": 448000000, "Sweden": 406000000,
+  "Croatia": 387000000, "United States": 386000000, "Ecuador": 369000000,
+  "Uruguay": 359000000, "Switzerland": 333000000, "Colombia": 302000000,
+  "Japan": 271000000, "Algeria": 257000000, "Austria": 245000000,
+  "Ghana": 235000000, "Canada": 199000000, "Mexico": 192000000,
+  "Czech Republic": 188000000, "Scotland": 170000000, "Paraguay": 154000000,
+  "Bosnia and Herzegovina": 146000000, "DR Congo": 144000000, "Democratic Republic of the Congo": 144000000,
+  "South Korea": 139000000, "Egypt": 117000000, "Uzbekistan": 85000000,
+  "Australia": 78000000, "Tunisia": 70000000, "Haiti": 56000000,
+  "Cape Verde": 49000000, "South Africa": 49000000, "Saudi Arabia": 41000000,
+  "Panama": 35000000, "New Zealand": 35000000, "Iran": 32000000,
+  "Curaçao": 26000000, "Iraq": 21000000, "Jordan": 20000000,
+  "Qatar": 20000000
+};
+
+function fmtValue(v) {
+  if (!v) return '—';
+  if (v >= 1e9) return '€' + (v / 1e9).toFixed(2) + '亿';
+  if (v >= 1e6) return '€' + (v / 1e6).toFixed(0) + 'M';
+  return '€' + v.toLocaleString();
+}
+
+// —— API 数据源 ——
+const ESPN_API  = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
+const WC26_API  = 'https://worldcup26.ir';
+
+// ESPN 队名 → wc26 队名（少数差异）
+const NAME_FIX = {
+  'Türkiye': 'Turkey', 'Czechia': 'Czech Republic',
+  'Korea Republic': 'South Korea', 'IR Iran': 'Iran',
+  'Côte d\'Ivoire': 'Ivory Coast', 'USA': 'United States',
+  'Cabo Verde': 'Cape Verde', 'Curaçao': 'Curaçao',
+  'Bosnia-Herzegovina': 'Bosnia and Herzegovina',
+  'Congo DR': 'Democratic Republic of the Congo',
+  'DR Congo': 'Democratic Republic of the Congo',
+};
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// —— 全局数据 ——
+let teamsMap = {};      // team_id(string) → {name_en, flag, fifa_code, groups}
+let groupsData = [];    // [{name, teams: [{team_id, mp, w, d, l, gf, ga, gd, pts}]}]
+let gamesData = [];     // [{home_team_name_en, away_team_name_en, home_score, away_score, group, finished, ...}]
+let lastFetchTime = null;
+let refreshSource = ''; // 'espn' | 'wc26' | 'bundle'
+
+// ==================== 从预置数据构建基础信息 ====================
+function buildTeamInfoFromBundle() {
+  if (typeof BUNDLED_DATA === 'undefined') return;
+  const tRes = BUNDLED_DATA.teams?.teams || [];
+  teamsMap = {};
+  tRes.forEach(t => { teamsMap[String(t.id)] = t; });
+}
+
+// ==================== ESPN 数据源（快速） ====================
+async function fetchFromESPN() {
+  const resp = await fetch(ESPN_API + '/scoreboard?dates=20260611-20260719');
+  if (!resp.ok) throw new Error('ESPN HTTP ' + resp.status);
+  const data = await resp.json();
+
+  // 按组聚合积分
+  const raw = {}; // {A: {TeamName: {mp,w,d,l,gf,ga}}}
+  const games = [];
+
+  for (const ev of data.events || []) {
+    const comp = ev.competitions?.[0];
+    if (!comp) continue;
+    const gm = comp.altGameNote?.match(/Group ([A-L])/);
+    if (!gm) continue;
+    const grp = gm[1];
+    const cs = comp.competitors || [];
+    if (cs.length < 2) continue;
+
+    const hName = NAME_FIX[cs[0]?.team?.displayName] || cs[0]?.team?.displayName || '?';
+    const aName = NAME_FIX[cs[1]?.team?.displayName] || cs[1]?.team?.displayName || '?';
+    const hScore = parseInt(cs[0]?.score) || 0;
+    const aScore = parseInt(cs[1]?.score) || 0;
+    const finished = comp.status?.type?.completed || false;
+
+    if (!raw[grp]) raw[grp] = {};
+    for (const [nm, sc, osc] of [[hName, hScore, aScore], [aName, aScore, hScore]]) {
+      if (!raw[grp][nm]) raw[grp][nm] = { mp:0, w:0, d:0, l:0, gf:0, ga:0 };
+      const r = raw[grp][nm];
+      if (finished) {
+        r.mp++; r.gf += sc; r.ga += osc;
+        if (sc > osc) { r.w++; } else if (sc === osc) { r.d++; } else { r.l++; }
+      }
+    }
+
+    games.push({
+      home_team_name_en: hName, away_team_name_en: aName,
+      home_score: String(hScore), away_score: String(aScore),
+      group: grp, finished: finished ? 'TRUE' : 'FALSE',
+      local_date: ev.date, type: 'group',
+      home_scorers: null, away_scorers: null
+    });
+  }
+
+  // 转换为 groupsData 格式：按预置数据补全 team_id / flag / group
+  const nameToInfo = {};
+  Object.values(teamsMap).forEach(t => {
+    nameToInfo[t.name_en] = t;
+    // also try fixes
+  });
+
+  const groupsArr = [];
+  for (const [grpName, teamMap] of Object.entries(raw)) {
+    const teams = [];
+    for (const [tName, stats] of Object.entries(teamMap)) {
+      const pts = stats.w * 3 + stats.d;
+      const info = nameToInfo[tName] || {};
+      teams.push({
+        team_id: info.id || tName,
+        name: tName, flag: info.flag || '',
+        fifa: info.fifa_code || '',
+        mp: stats.mp, w: stats.w, d: stats.d, l: stats.l,
+        gf: stats.gf, ga: stats.ga, gd: stats.gf - stats.ga,
+        pts: pts,
+        marketValue: MARKET_VALUES[tName] || null
+      });
+    }
+    teams.sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+    groupsArr.push({ name: grpName, teams });
+  }
+  groupsArr.sort((a, b) => a.name.localeCompare(b.name));
+
+  return { groups: groupsArr, games, source: 'espn', allOk: true };
+}
+
+// ==================== worldcup26.ir 数据源（慢速备用） ====================
+async function fetchFromWC26(timeoutMs = 6000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const [tR, gR, gsR] = await Promise.all([
+      fetch(WC26_API + '/get/teams', { signal: ctrl.signal }).then(r => r.ok ? r.json() : null),
+      fetch(WC26_API + '/get/groups', { signal: ctrl.signal }).then(r => r.ok ? r.json() : null),
+      fetch(WC26_API + '/get/games', { signal: ctrl.signal }).then(r => r.ok ? r.json() : null)
+    ]);
+
+    const teams = {};
+    (tR?.teams || []).forEach(t => { teams[String(t.id)] = t; });
+
+    const groupsArr = (gR?.groups || []).map(g => {
+      const td = (g.teams || []).map(t => {
+        const info = teams[String(t.team_id)] || {};
+        return {
+          team_id: t.team_id, name: info.name_en || 'Team ' + t.team_id,
+          flag: info.flag || '', fifa: info.fifa_code || '',
+          mp: +t.mp||0, w: +t.w||0, d: +t.d||0, l: +t.l||0,
+          gf: +t.gf||0, ga: +t.ga||0, gd: +t.gd||0, pts: +t.pts||0,
+          marketValue: MARKET_VALUES[info.name_en] || null
+        };
+      }).sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
+      return { name: g.name, teams: td };
+    });
+    groupsArr.sort((a,b) => a.name.localeCompare(b.name));
+
+    const games = (gsR?.games || []).filter(g => g.type === 'group');
+
+    // Also update teamsMap from wc26
+    Object.entries(teams).forEach(([id, t]) => { teamsMap[id] = t; });
+
+    return { groups: groupsArr, games, source: 'wc26',
+      allOk: !!(tR && gR && gsR),
+      partial: { teams: !tR, groups: !gR, games: !gsR }
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ==================== 竞速加载 ====================
+async function fetchAllFresh(timeoutMs = 6000) {
+  // ESPN 和 wc26 同时请求，谁先回来用谁
+  const espnP = fetchFromESPN();
+  const wc26P = fetchFromWC26(timeoutMs);
+  const timeoutP = sleep(timeoutMs).then(() => ({ source: 'timeout' }));
+
+  const winner = await Promise.race([espnP, wc26P, timeoutP]);
+
+  if (winner.source === 'timeout') throw new Error('所有数据源超时');
+
+  // 如果是 ESPN 先到，wc26 可以稍后补全一些详细数据
+  if (winner.source === 'espn' && winner.groups?.length === 12) {
+    // 后台尝试 wc26 补齐比赛进球者等细节
+    wc26P.then(wc => {
+      if (wc?.games) {
+        gamesData = wc.games.filter(g => g.type === 'group');
+        // 静默更新
+      }
+    }).catch(() => {});
+  }
+
+  return winner;
+}
+
+// ==================== localStorage 缓存 ====================
+const CACHE_KEY = 'wc2026_data';
+const CACHE_MAX_AGE = 5 * 60 * 1000;
+
+function saveCache(teamsRaw, groupsRaw, gamesRaw) {
+  try {
+    const cache = { teams: teamsRaw, groups: groupsRaw, games: gamesRaw, time: Date.now() };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch(e) {}
+}
+
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const cache = JSON.parse(raw);
+    return (Date.now() - cache.time > CACHE_MAX_AGE) ? null : cache;
+  } catch(e) { return null; }
+}
+
+function applyComputedData(result) {
+  // 直接用 fetchAllFresh 的返回结果更新全局数据
+  groupsData = result.groups || [];
+  gamesData = result.games || [];
+  lastFetchTime = new Date();
+  refreshSource = result.source || '?';
+  cachedStats = null; // 数据变了，统计需要重新算
+}
+
+function applyRawData(teamsRaw, groupsRaw, gamesRaw) {
+  teamsMap = {};
+  (teamsRaw?.teams || []).forEach(t => { teamsMap[String(t.id)] = t; });
+  groupsData = groupsRaw?.groups || [];
+  gamesData = (gamesRaw?.games || []).filter(g => g.type === 'group');
+  lastFetchTime = new Date();
+  cachedStats = null;
+}
+
+// —— 获取小组完整数据 ——
+function getGroupFullData(group) {
+  // 兼容两种数据格式：ESPN直接带name/flag，bundled只有team_id
+  const teams = (group.teams || []).map(t => {
+    if (t.name) return t; // ESPN格式：已包含完整数据
+    // Bundled格式：需要用teamsMap补全
+    const info = teamsMap[String(t.team_id)] || {};
+    return {
+      team_id: t.team_id,
+      name: info.name_en || 'Team ' + t.team_id,
+      flag: info.flag || '',
+      fifa: info.fifa_code || '',
+      mp: t.mp || 0, w: t.w || 0, d: t.d || 0, l: t.l || 0,
+      gf: t.gf || 0, ga: t.ga || 0, gd: t.gd || 0, pts: t.pts || 0,
+      marketValue: MARKET_VALUES[info.name_en] || null
+    };
+  });
+  return teams.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+}
+
+// —— 获取小组的比赛 ——
+function getGroupGames(groupName) {
+  return gamesData.filter(g => g.group === groupName);
+}
+
+// ==================== 渲染：小组赛 ====================
+
+function renderGroupCards() {
+  const grid = document.getElementById('groupsGrid');
+  grid.innerHTML = '';
+
+  // 按名称排序
+  const sorted = [...groupsData].sort((a, b) => a.name.localeCompare(b.name));
+
+  sorted.forEach(group => {
+    const teams = getGroupFullData(group);
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    card.onclick = () => openGroupDetail(group.name, teams);
+
+    let html = `<div class="group-card-header">
+      <span class="group-name">${group.name} 组</span>
+      <span class="arrow">详情 →</span>
+    </div>`;
+
+    teams.forEach((t, i) => {
+      const isQ = i < 2; // 前两名晋级
+      html += `<div class="team-row${isQ ? ' qualified' : ''}">
+        <span class="team-rank">${i + 1}</span>
+        <img class="team-flag" src="${t.flag}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <span class="team-name">${t.name}</span>
+        <span class="team-stats">
+          <span class="stat-item stat-mp" title="场次">${t.mp}</span>
+          <span class="stat-item stat-gf" title="进球">${t.gf}</span>
+          <span class="stat-item stat-ga" title="失球">${t.ga}</span>
+          <span class="stat-item stat-gd" title="净胜球">${t.gd >= 0 ? '+' : ''}${t.gd}</span>
+          <span class="stat-item stat-pts" title="积分">${t.pts}</span>
+        </span>
+      </div>`;
+    });
+
+    card.innerHTML = html;
+    grid.appendChild(card);
+  });
+}
+
+// —— 组详情弹窗 ——
+function openGroupDetail(groupName, teams) {
+  // 移除已有弹窗
+  document.querySelectorAll('.modal-overlay').forEach(e => e.remove());
+
+  const games = getGroupGames(groupName);
+
+  let tableRows = '';
+  teams.forEach((t, i) => {
+    const isQ = i < 2;
+    tableRows += `<tr class="${isQ ? 'qualify-row' : ''}">
+      <td>
+        <img src="${t.flag}" alt="" style="width:24px;height:16px;object-fit:cover;border-radius:2px;" onerror="this.style.display='none'">
+        ${isQ ? '⭐ ' : ''}${t.name}
+      </td>
+      <td>${t.mp}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
+      <td>${t.gf}</td><td>${t.ga}</td><td>${t.gd >= 0 ? '+' + t.gd : t.gd}</td>
+      <td><strong style="color:var(--gold-bright);font-size:16px;">${t.pts}</strong></td>
+      <td class="market-value">${fmtValue(t.marketValue)}</td>
+    </tr>`;
+  });
+
+  let matchHtml = '';
+  if (games.length === 0) {
+    matchHtml = '<p style="color:#777;text-align:center;padding:20px;">暂无比赛记录</p>';
+  } else {
+    games.sort((a, b) => {
+      if (a.finished === 'TRUE' && b.finished !== 'TRUE') return -1;
+      if (a.finished !== 'TRUE' && b.finished === 'TRUE') return 1;
+      return 0;
+    });
+    games.forEach(g => {
+      let statusClass = '';
+      let statusText = '';
+      if (g.finished === 'TRUE') { statusClass = 'match-finished'; statusText = '已结束'; }
+      else if (g.time_elapsed === 'live') { statusClass = 'match-live'; statusText = '● 直播中'; }
+      else { statusClass = 'match-scheduled'; statusText = g.local_date || '待定'; }
+
+      const hScorers = tryParseScorers(g.home_scorers);
+      const aScorers = tryParseScorers(g.away_scorers);
+
+      matchHtml += `<div class="match-item">
+        <div class="match-teams">
+          <img src="${findFlag(g.home_team_name_en)}" style="width:22px;height:15px;border-radius:2px;" onerror="this.style.display='none'">
+          <span>${g.home_team_name_en || 'TBD'}</span>
+        </div>
+        <div class="match-score">${g.home_score ?? '-'} : ${g.away_score ?? '-'}</div>
+        <div class="match-teams" style="justify-content:flex-end;text-align:right;">
+          <span>${g.away_team_name_en || 'TBD'}</span>
+          <img src="${findFlag(g.away_team_name_en)}" style="width:22px;height:15px;border-radius:2px;" onerror="this.style.display='none'">
+        </div>
+        <div class="match-meta">
+          <span class="${statusClass}">${statusText}</span>
+          ${hScorers || aScorers ? `<div class="scorers">⚽ ${[hScorers, aScorers].filter(Boolean).join(' / ')}</div>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  overlay.innerHTML = `<div class="modal">
+    <div class="modal-header">
+      <h2>${groupName} 组 — 详细数据</h2>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3 style="margin-bottom:10px;color:#8ab890;">📊 积分榜</h3>
+      <div style="overflow-x:auto;">
+        <table class="standings-table">
+          <thead><tr>
+            <th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th><th>身价</th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+
+      <h3 style="margin:20px 0 10px;color:#8ab890;">📅 比赛记录</h3>
+      <div class="match-list">${matchHtml}</div>
+    </div>
+  </div>`;
+
+  document.body.appendChild(overlay);
+}
+
+function findFlag(name) {
+  if (!name) return '';
+  for (const [id, info] of Object.entries(teamsMap)) {
+    if (info.name_en === name) return info.flag || '';
+  }
+  return '';
+}
+
+function tryParseScorers(raw) {
+  if (!raw || raw === 'null') return '';
+  try {
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) return arr.join(', ');
+    return raw;
+  } catch { return raw; }
+}
+
+// ==================== 渲染：淘汰赛对阵图 ====================
+
+// FIFA官方 Round of 32 对阵表
+// 格式: [slotA描述, slotB描述]  其中 slotA/slotB 可能是 "W:A"(A组第一) "R:B"(B组第二) "3:ABCD"(3rd from A/B/C/D)
+const R32_MATCHES = [
+  { id: 1, slots: ['R:A', 'R:B'], label: 'A2 vs B2' },
+  { id: 2, slots: ['W:E', '3:A,B,C,D,F'], label: 'E1 vs 3rd' },
+  { id: 3, slots: ['W:F', 'R:C'], label: 'F1 vs C2' },
+  { id: 4, slots: ['W:C', 'R:F'], label: 'C1 vs F2' },
+  { id: 5, slots: ['W:I', '3:C,D,F,G,H'], label: 'I1 vs 3rd' },
+  { id: 6, slots: ['R:E', 'R:I'], label: 'E2 vs I2' },
+  { id: 7, slots: ['W:A', '3:C,E,F,H,I'], label: 'A1 vs 3rd' },
+  { id: 8, slots: ['W:L', '3:E,H,I,J,K'], label: 'L1 vs 3rd' },
+  { id: 9, slots: ['W:D', '3:B,E,F,I,J'], label: 'D1 vs 3rd' },
+  { id: 10, slots: ['W:G', '3:A,E,H,I,J'], label: 'G1 vs 3rd' },
+  { id: 11, slots: ['R:K', 'R:L'], label: 'K2 vs L2' },
+  { id: 12, slots: ['W:H', 'R:J'], label: 'H1 vs J2' },
+  { id: 13, slots: ['W:B', '3:E,F,G,I,J'], label: 'B1 vs 3rd' },
+  { id: 14, slots: ['W:J', 'R:H'], label: 'J1 vs H2' },
+  { id: 15, slots: ['W:K', '3:D,E,I,J,L'], label: 'K1 vs 3rd' },
+  { id: 16, slots: ['R:D', 'R:G'], label: 'D2 vs G2' },
+];
+
+// R32 → R16 连线
+const R16_MATCHES = [
+  { id: 1, from: [1, 2] },
+  { id: 2, from: [3, 4] },
+  { id: 3, from: [5, 6] },
+  { id: 4, from: [7, 8] },
+  { id: 5, from: [9, 10] },
+  { id: 6, from: [11, 12] },
+  { id: 7, from: [13, 14] },
+  { id: 8, from: [15, 16] },
+];
+
+// QF
+const QF_MATCHES = [
+  { id: 1, from: [1, 2] },
+  { id: 2, from: [3, 4] },
+  { id: 3, from: [5, 6] },
+  { id: 4, from: [7, 8] },
+];
+
+// SF
+const SF_MATCHES = [
+  { id: 1, from: [1, 2] },
+  { id: 2, from: [3, 4] },
+];
+
+// FINAL + 3rd
+const FINAL_MATCHES = [
+  { id: 'third', from: [1, 2], isThird: true },
+  { id: 'final', from: [1, 2], isFinal: true },
+];
+
+// 解析 slot 描述，查找球队
+function resolveSlot(slotDesc) {
+  // slotDesc example: "W:A" = Winner of A, "R:B" = Runner-up of B, "3:A,B,C,D,F"
+  if (slotDesc.startsWith('W:')) {
+    const group = slotDesc.slice(2);
+    const grp = groupsData.find(g => g.name === group);
+    if (!grp) return { team: null, desc: group + '组第1' };
+    const teams = getGroupFullData(grp);
+    return { team: teams[0] || null, desc: group + '组第1' };
+  }
+  if (slotDesc.startsWith('R:')) {
+    const group = slotDesc.slice(2);
+    const grp = groupsData.find(g => g.name === group);
+    if (!grp) return { team: null, desc: group + '组第2' };
+    const teams = getGroupFullData(grp);
+    return { team: teams[1] || null, desc: group + '组第2' };
+  }
+  if (slotDesc.startsWith('3:')) {
+    const groups = slotDesc.slice(2).split(',');
+    return { team: null, desc: '第3 (' + groups.join('/') + ')', isThird: true };
+  }
+  return { team: null, desc: '待定' };
+}
+
+function renderBracketMatch(match, roundLabel) {
+  const [sA, sB] = match.slots.map(resolveSlot);
+
+  let html = `<div class="bracket-match${(sA.team || sB.team) ? ' confirmed' : ''}">`;
+
+  [sA, sB].forEach(s => {
+    const cls = s.team ? 'team-confirmed' : 'placeholder';
+    html += `<div class="bracket-slot ${cls}">`;
+    if (s.team) {
+      html += `<img src="${s.team.flag}" alt="" onerror="this.style.display='none'">`;
+      html += `<span>${s.team.name}</span>`;
+    } else {
+      html += `<span>${s.desc}</span>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function renderSimpleSlot(label) {
+  return `<div class="bracket-match">
+    <div class="bracket-slot placeholder"><span>${label}</span></div>
+    <div class="bracket-slot placeholder"><span>待定</span></div>
+  </div>`;
+}
+
+function renderBracket() {
+  const container = document.getElementById('bracketContainer');
+  if (!groupsData.length) {
+    container.innerHTML = '<div class="status-box"><p style="color:#777;">请先加载小组赛数据</p></div>';
+    return;
+  }
+
+  // 各阶段比赛渲染
+  function renderRound(matches, getSlotLabel, connectorLabel) {
+    let html = '<div class="bracket-round">';
+    matches.forEach((m, i) => {
+      if (i > 0) {
+        // add spacing between matches
+        html += '<div style="height:8px;"></div>';
+      }
+      if (m.slots) {
+        html += renderBracketMatch(m);
+      } else {
+        html += renderSimpleSlot(getSlotLabel ? getSlotLabel(m) : 'TBD');
+      }
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function connector() {
+    return '<div class="bracket-connector" style="display:flex;align-items:center;">→</div>';
+  }
+
+  let html = '<div class="bracket">';
+
+  // R32
+  html += renderRound(R32_MATCHES);
+  html += connector();
+
+  // R16
+  html += renderRound(R16_MATCHES, m => 'R16-' + m.id);
+  html += connector();
+
+  // QF
+  html += renderRound(QF_MATCHES, m => 'QF' + m.id);
+  html += connector();
+
+  // SF
+  html += renderRound(SF_MATCHES, m => 'SF' + m.id);
+  html += connector();
+
+  // Final + 3rd
+  html += '<div class="bracket-round">';
+  html += renderSimpleSlot('🥉 季军赛');
+  html += '<div style="height:20px;"></div>';
+  html += renderSimpleSlot('🏆 决赛');
+  html += '</div>';
+
+  html += '</div>';
+
+  // Round labels
+  const labels = `
+    <div class="bracket-round-labels" style="display:flex;gap:8px;padding-left:0;margin-bottom:4px;">
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">32强</div>
+      <div style="width:30px;"></div>
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">16强</div>
+      <div style="width:30px;"></div>
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">8强</div>
+      <div style="width:30px;"></div>
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">半决赛</div>
+      <div style="width:30px;"></div>
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">决赛</div>
+    </div>
+  `;
+
+  container.innerHTML = labels + html;
+}
+
+// ==================== 骨架屏 ====================
+function renderSkeletonCards() {
+  const grid = document.getElementById('groupsGrid');
+  grid.innerHTML = '';
+  const groups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+  groups.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'group-card skeleton-card';
+    card.innerHTML = `
+      <div class="group-card-header">
+        <span class="group-name">${g} 组</span>
+        <span class="arrow">加载中…</span>
+      </div>
+      ${[1,2,3,4].map(() => `
+        <div class="team-row skeleton-row">
+          <span class="skeleton-block" style="width:22px;height:16px;"></span>
+          <span class="skeleton-block" style="width:24px;height:16px;border-radius:2px;"></span>
+          <span class="skeleton-block" style="flex:1;height:14px;max-width:120px;"></span>
+          <span class="skeleton-block" style="width:80px;height:14px;"></span>
+          <span class="skeleton-block" style="width:24px;height:16px;"></span>
+        </div>
+      `).join('')}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ==================== 数据榜单 ====================
+let cachedStats = null; // {goals:[{player,team,count}], assists:[], cards:[]}
+
+function parseScorerName(raw) {
+  // raw = "J. Quiñones 9'" / "B. Khoukhi 90'+5'" / "Y. Wissa 45+5'" 等
+  // 规则：最后一个空格后的词若以数字开头 → 去掉（那是时间标记）
+  let name = raw.trim();
+  const lastSpace = name.lastIndexOf(' ');
+  if (lastSpace > 0) {
+    const after = name.substring(lastSpace + 1);
+    if (/^\d/.test(after)) {
+      name = name.substring(0, lastSpace);
+    }
+  }
+  return name.trim();
+}
+
+function computeStats() {
+  // 尝试从缓存读取
+  if (cachedStats) return cachedStats;
+
+  const goalMap = {};   // key: player|team → {player, team, count}
+
+  // 1. 从预置数据解析射手（ESPN没有进球者名字，必须用bundled数据）
+  const bundledGames = (typeof BUNDLED_DATA !== 'undefined' ? BUNDLED_DATA.games?.games || [] : []);
+  // 同时尝试用gamesData补全（如果有wc26来源的数据）
+  const allGames = [...bundledGames];
+  for (const g of gamesData) {
+    if (g.home_scorers && g.home_scorers !== 'null') {
+      // wc26来源的数据有scorers，补进去（避免重复）
+      if (!allGames.find(bg => bg.home_team_name_en === g.home_team_name_en && bg.away_team_name_en === g.away_team_name_en)) {
+        allGames.push(g);
+      }
+    }
+  }
+
+  for (const g of allGames) {
+    if (g.finished !== 'TRUE') continue;
+    for (const [scorersRaw, teamName] of [[g.home_scorers, g.home_team_name_en], [g.away_scorers, g.away_team_name_en]]) {
+      if (!scorersRaw || scorersRaw === 'null') continue;
+      // 提取球员名（兼容弯引号 "…" 和直引号 "…"）
+      const names = scorersRaw.match(/[\"“]([^\"”]+)[\"”]/g);
+      if (!names) continue;
+      for (const n of names) {
+        const player = parseScorerName(n.replace(/[\"“”]/g, ''));
+        if (!player) continue;
+        const key = player + '|' + (teamName || '?');
+        if (!goalMap[key]) goalMap[key] = { player, team: teamName || '?', count: 0 };
+        goalMap[key].count++;
+      }
+    }
+  }
+
+  // 排序
+  const goals = Object.values(goalMap).sort((a, b) => b.count - a.count || a.player.localeCompare(b.player));
+
+  // 2. 助攻/红黄牌：预置统计优先（已抓完28场，比localStorage更全）
+  const savedStats = loadStatsCache();
+  const bundledS = (typeof BUNDLED_STATS !== 'undefined') ? BUNDLED_STATS : null;
+  const assistSrc = (savedStats?.assists?.length > (bundledS?.assists?.length || 0)) ? savedStats : bundledS;
+  const yellowSrc = (savedStats?.yellowCards?.length > (bundledS?.yellowCards?.length || 0)) ? savedStats : bundledS;
+  const redSrc = (savedStats?.redCards?.length > (bundledS?.redCards?.length || 0)) ? savedStats : bundledS;
+  const assists = (assistSrc?.assists || []).sort((a, b) => b.count - a.count);
+  const yellowCards = (yellowSrc?.yellowCards || []).sort((a, b) => b.count - a.count);
+  const redCards = (redSrc?.redCards || []).sort((a, b) => b.count - a.count);
+
+  cachedStats = { goals, assists, yellowCards, redCards };
+  return cachedStats;
+}
+
+function renderStats() {
+  const grid = document.getElementById('statsGrid');
+  if (!gamesData.length) {
+    grid.innerHTML = '<div class="status-box"><p style="color:#777;">请先加载比赛数据</p></div>';
+    return;
+  }
+
+  const stats = computeStats();
+
+  // 射手榜
+  let goalsHtml = '';
+  if (stats.goals.length) {
+    stats.goals.slice(0, 20).forEach((s, i) => {
+      const rankCls = i < 3 ? ` stats-rank-${i+1}` : '';
+      goalsHtml += `<tr class="${rankCls}">
+        <td>${i + 1}</td>
+        <td><span class="stats-player">${s.player}</span><br><span class="stats-team">${s.team}</span></td>
+        <td>${s.count}</td>
+      </tr>`;
+    });
+  } else {
+    goalsHtml = '<tr><td colspan="3" class="stats-note">暂无进球数据</td></tr>';
+  }
+
+  // 助攻榜
+  let assistsHtml = '';
+  if (stats.assists.length) {
+    stats.assists.slice(0, 20).forEach((s, i) => {
+      const rankCls = i < 3 ? ` stats-rank-${i+1}` : '';
+      assistsHtml += `<tr class="${rankCls}">
+        <td>${i + 1}</td>
+        <td><span class="stats-player">${s.player}</span><br><span class="stats-team">${s.team}</span></td>
+        <td>${s.count}</td>
+      </tr>`;
+    });
+  } else {
+    assistsHtml = '<tr><td colspan="3" class="stats-note">助攻数据采集中，请稍后刷新</td></tr>';
+  }
+
+  // 黄牌榜
+  let yellowHtml = '';
+  if ((stats.yellowCards || []).length) {
+    (stats.yellowCards || []).slice(0, 20).forEach((s, i) => {
+      const rankCls = i < 3 ? ` stats-rank-${i+1}` : '';
+      yellowHtml += `<tr class="${rankCls}">
+        <td>${i + 1}</td>
+        <td><span class="stats-player">${s.player}</span><br><span class="stats-team">${s.team}</span></td>
+        <td>${s.count}</td>
+      </tr>`;
+    });
+  } else {
+    yellowHtml = '<tr><td colspan="3" class="stats-note">黄牌数据采集中，请稍后刷新</td></tr>';
+  }
+
+  // 红牌榜
+  let redHtml = '';
+  if ((stats.redCards || []).length) {
+    (stats.redCards || []).slice(0, 20).forEach((s, i) => {
+      const rankCls = i < 3 ? ` stats-rank-${i+1}` : '';
+      redHtml += `<tr class="${rankCls}">
+        <td>${i + 1}</td>
+        <td><span class="stats-player">${s.player}</span><br><span class="stats-team">${s.team}</span></td>
+        <td>${s.count}</td>
+      </tr>`;
+    });
+  } else {
+    redHtml = '<tr><td colspan="3" class="stats-note">红牌数据采集中，请稍后刷新</td></tr>';
+  }
+
+  grid.innerHTML = `
+    <div class="stats-card">
+      <div class="stats-card-header"><span class="icon">⚽</span><span class="stats-header-goals">射手榜</span></div>
+      <table class="stats-table">
+        <thead><tr><th>#</th><th>球员</th><th>进球</th></tr></thead>
+        <tbody>${goalsHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-card-header"><span class="icon">🎯</span><span class="stats-header-assists">助攻榜</span></div>
+      <table class="stats-table">
+        <thead><tr><th>#</th><th>球员</th><th>助攻</th></tr></thead>
+        <tbody>${assistsHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-card-header"><span class="icon">🟨</span><span class="stats-header-cards">黄牌榜</span></div>
+      <table class="stats-table">
+        <thead><tr><th>#</th><th>球员</th><th>黄牌</th></tr></thead>
+        <tbody>${yellowHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-card-header"><span class="icon">🟥</span><span class="stats-header-cards">红牌榜</span></div>
+      <table class="stats-table">
+        <thead><tr><th>#</th><th>球员</th><th>红牌</th></tr></thead>
+        <tbody>${redHtml}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ==================== ESPN 辅助数据采集（助攻/红黄牌）====================
+const STATS_CACHE_KEY = 'wc2026_stats';
+const STATS_CACHE_VERSION = 3; // 升级版本号可强制清除旧缓存
+const PROCESSED_MATCHES_KEY = 'wc2026_processed_matches';
+
+function saveStatsCache(stats) {
+  try { localStorage.setItem(STATS_CACHE_KEY, JSON.stringify({ ...stats, _v: STATS_CACHE_VERSION })); } catch(e) {}
+}
+
+function loadStatsCache() {
+  try {
+    const raw = localStorage.getItem(STATS_CACHE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    // 版本不对 → 清空全部缓存，重新采集
+    if (data._v !== STATS_CACHE_VERSION) {
+      localStorage.removeItem(STATS_CACHE_KEY);
+      localStorage.removeItem(PROCESSED_MATCHES_KEY);
+      return null;
+    }
+    return data;
+  } catch(e) {
+    localStorage.removeItem(STATS_CACHE_KEY);
+    return null;
+  }
+}
+
+function getProcessedMatches() {
+  try {
+    const raw = localStorage.getItem(PROCESSED_MATCHES_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch(e) { return new Set(); }
+}
+
+function addProcessedMatch(eventId) {
+  const set = getProcessedMatches();
+  set.add(String(eventId));
+  try { localStorage.setItem(PROCESSED_MATCHES_KEY, JSON.stringify([...set])); } catch(e) {}
+}
+
+async function enrichStatsFromESPN() {
+  // 直接从ESPN获取所有已完成比赛的事件数据 —— 不做队名匹配
+  let espnEvents;
+  try {
+    const resp = await fetch(ESPN_API + '/scoreboard?dates=20260611-20260719');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    espnEvents = (data.events || []).filter(e => {
+      const st = e.competitions?.[0]?.status?.type;
+      return st?.completed === true;
+    });
+  } catch(e) { return; }
+
+  if (!espnEvents.length) return;
+
+  const processedSet = getProcessedMatches();
+  // 所有未处理的已完成比赛（不限5场）
+  const toProcess = espnEvents
+    .filter(e => !processedSet.has(String(e.id)))
+    .slice(0, 10); // 每次最多10场，渐进加载
+
+  if (!toProcess.length) return;
+
+  // 并行抓取
+  const summaries = await Promise.allSettled(
+    toProcess.map(e =>
+      fetch(ESPN_API + '/summary?event=' + e.id)
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null)
+    )
+  );
+
+  // 解析助攻/黄牌/红牌
+  const assistMap = {};
+  const yellowMap = {};
+  const redMap = {};
+
+  // 先从已有缓存加载
+  const oldStats = loadStatsCache();
+  if (oldStats) {
+    for (const a of oldStats.assists || []) assistMap[a.player + '|' + a.team] = {...a};
+    for (const y of oldStats.yellowCards || []) yellowMap[y.player + '|' + y.team] = {...y};
+    for (const r of oldStats.redCards || []) redMap[r.player + '|' + r.team] = {...r};
+  }
+
+  summaries.forEach((result, idx) => {
+    if (result.status !== 'fulfilled' || !result.value) return;
+    const summary = result.value;
+    const espnEvent = toProcess[idx];
+    addProcessedMatch(espnEvent.id);
+
+    // 从ESPN event直接获取球队名
+    const cs = espnEvent.competitions?.[0]?.competitors || [];
+    const teamById = {};
+    cs.forEach(c => {
+      const t = c.team || {};
+      const cleanName = NAME_FIX[t.displayName] || t.displayName || '';
+      teamById[t.id] = cleanName;
+    });
+
+    const keyEvents = summary.keyEvents || [];
+    for (const ev of keyEvents) {
+      const type = ev.type?.type || '';
+      const text = ev.text || '';
+
+      if (type === 'goal' || type.startsWith('goal---')) {
+        const assistIdx = text.indexOf('Assisted by ');
+        if (assistIdx >= 0) {
+          let assistPart = text.substring(assistIdx + 'Assisted by '.length);
+          const cutWords = [' with ', ' following ', ' after ', ' from ', ' via ', ' on ', ' for ', ' during '];
+          for (const w of cutWords) {
+            const idx2 = assistPart.indexOf(w);
+            if (idx2 > 0) { assistPart = assistPart.substring(0, idx2); break; }
+          }
+          assistPart = assistPart.replace(/\.\s*$/, '').trim();
+          if (assistPart) {
+            // 用进球者的队伍（括号里的第一个队名）
+            const teamMatch = text.match(/\(([^)]+)\)/);
+            const rawTeam = teamMatch ? teamMatch[1] : '';
+            const team = NAME_FIX[rawTeam] || rawTeam || (cs[0]?.team?.displayName || '?');
+            const key = assistPart + '|' + team;
+            if (!assistMap[key]) assistMap[key] = { player: assistPart, team, count: 0 };
+            assistMap[key].count++;
+          }
+        }
+      }
+
+      if (type === 'yellow-card') {
+        const pm = text.match(/^(.+?)\s*\(([^)]+)\)/);
+        if (pm) {
+          const rawTeam = pm[2].trim();
+          const team = NAME_FIX[rawTeam] || rawTeam;
+          const key = pm[1].trim() + '|' + team;
+          if (!yellowMap[key]) yellowMap[key] = { player: pm[1].trim(), team, count: 0 };
+          yellowMap[key].count++;
+        }
+      }
+
+      if (type === 'red-card') {
+        const pm = text.match(/^(.+?)\s*\(([^)]+)\)/);
+        if (pm) {
+          const rawTeam = pm[2].trim();
+          const team = NAME_FIX[rawTeam] || rawTeam;
+          const key = pm[1].trim() + '|' + team;
+          if (!redMap[key]) redMap[key] = { player: pm[1].trim(), team, count: 0 };
+          redMap[key].count++;
+        }
+      }
+    }
+  });
+
+  // 更新全局stats
+  if (cachedStats) {
+    cachedStats.assists = Object.values(assistMap).sort((a,b) => b.count - a.count);
+    cachedStats.yellowCards = Object.values(yellowMap).sort((a,b) => b.count - a.count);
+    cachedStats.redCards = Object.values(redMap).sort((a,b) => b.count - a.count);
+  }
+
+  saveStatsCache({
+    assists: Object.values(assistMap),
+    yellowCards: Object.values(yellowMap),
+    redCards: Object.values(redMap),
+    updated: Date.now()
+  });
+
+  // 重新渲染stats面板
+  if (document.getElementById('panelStats').classList.contains('active')) {
+    renderStats();
+  }
+}
+
+// ==================== 主流程 ====================
+async function init() {
+  // 1. 骨架屏
+  renderSkeletonCards();
+  document.getElementById('groupsStatus').style.display = 'none';
+
+  // 2. 构建团队基础信息（从预置数据）
+  buildTeamInfoFromBundle();
+
+  // 3. 🚀 预置数据秒开
+  let hasData = false;
+  if (typeof BUNDLED_DATA !== 'undefined' && BUNDLED_DATA.groups) {
+    applyRawData(BUNDLED_DATA.teams, BUNDLED_DATA.groups, BUNDLED_DATA.games);
+    lastFetchTime = new Date(BUNDLED_DATA.time);
+    hasData = true;
+  }
+  if (!hasData) {
+    const cached = loadCache();
+    if (cached) {
+      applyRawData(cached.teams, cached.groups, cached.games);
+      lastFetchTime = new Date(cached.time);
+      hasData = true;
+    }
+  }
+  if (hasData) {
+    renderAll();
+    updateTimeDisplay('(预置)');
+  }
+
+  // 4. 后台拉取最新数据（ESPN快 + wc26备用，6秒超时）
+  try {
+    const fresh = await fetchAllFresh(6000);
+    if (fresh.groups?.length) {
+      applyComputedData(fresh);
+      if (fresh.games?.length) {
+        // 缓存兼容格式
+        saveCache(
+          typeof BUNDLED_DATA !== 'undefined' ? BUNDLED_DATA.teams : {},
+          { groups: fresh.groups },
+          { games: fresh.games }
+        );
+      }
+      cachedStats = null; // 清除统计缓存
+      renderAll();
+      updateTimeDisplay(fresh.source === 'espn' ? '(ESPN实时)' : '');
+    }
+  } catch (err) {
+    console.log('后台刷新未完成:', err.message);
+  }
+
+  // 5. 后台采集助攻/红黄牌数据
+  enrichStatsFromESPN().catch(() => {});
+
+  // 6. 启动自动刷新
+  scheduleAutoRefresh();
+}
+
+function updateTimeDisplay(suffix) {
+  const el = document.getElementById('updateTime');
+  if (!lastFetchTime) { el.innerHTML = '加载中...'; return; }
+  const timeStr = lastFetchTime.toLocaleString('zh-CN', {
+    month: 'numeric', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  const nextStr = getNextAutoRefreshStr();
+  let html = '数据更新于<br><span>' + timeStr + '</span>';
+  html += '<br><small style="color:#6a9;">⏰ 下次自动刷新 ' + nextStr + '</small>';
+  if (suffix) html += '<br><small style="color:#6a9;">' + suffix + '</small>';
+  el.innerHTML = html;
+}
+
+async function refreshData() {
+  const btn = document.getElementById('btnRefresh');
+  const updateEl = document.getElementById('updateTime');
+
+  btn.classList.add('spinning');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="icon">🔄</span> 刷新中…';
+
+  let elapsed = 0;
+  const countdown = setInterval(() => {
+    elapsed++;
+    btn.innerHTML = '<span class="icon">🔄</span> 刷新中…(' + elapsed + 's)';
+  }, 1000);
+
+  try {
+    buildTeamInfoFromBundle(); // 确保 teamsMap 就绪
+    const fresh = await fetchAllFresh(6000);
+    clearInterval(countdown);
+
+    if (fresh.groups?.length) {
+      applyComputedData(fresh);
+      saveCache(
+        typeof BUNDLED_DATA !== 'undefined' ? BUNDLED_DATA.teams : {},
+        { groups: fresh.groups },
+        { games: fresh.games }
+      );
+      renderAll();
+      const timeStr = lastFetchTime.toLocaleString('zh-CN', {
+        month: 'numeric', day: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      updateEl.innerHTML = '数据更新于<br><span>' + timeStr + '</span>'
+        + (fresh.source === 'espn' ? '<br><small style="color:#6a9;">⚡ ESPN实时数据</small>' : '');
+    } else {
+      updateEl.innerHTML = '<span style="color:#f0c040;">无新数据</span>';
+    }
+    resetAutoRefresh();
+    // 后台采集助攻/红黄牌
+    enrichStatsFromESPN().catch(() => {});
+  } catch (err) {
+    clearInterval(countdown);
+    console.error('刷新失败:', err);
+    updateEl.innerHTML = '<span style="color:#e04040;">刷新超时(' + (elapsed) + 's)，点击重试</span>';
+  } finally {
+    btn.classList.remove('spinning');
+    btn.disabled = false;
+    btn.innerHTML = '<span class="icon">🔄</span> 刷新数据';
+  }
+}
+
+// ==================== 自动刷新 ====================
+const AUTO_INTERVAL = 30 * 60 * 1000;
+let autoRefreshTimer = null;
+let nextAutoRefreshTime = null;
+
+async function silentRefresh() {
+  console.log('⏰ 自动刷新...');
+  try {
+    buildTeamInfoFromBundle();
+    const fresh = await fetchAllFresh(6000);
+    if (fresh.groups?.length) {
+      applyComputedData(fresh);
+      saveCache(
+        typeof BUNDLED_DATA !== 'undefined' ? BUNDLED_DATA.teams : {},
+        { groups: fresh.groups },
+        { games: fresh.games }
+      );
+      renderAll();
+      updateTimeDisplay('(已自动更新)');
+      setTimeout(() => updateTimeDisplay(''), 3000);
+    }
+  } catch (err) {
+    console.log('自动刷新未完成:', err.message);
+  }
+  // 后台采集助攻/红黄牌
+  enrichStatsFromESPN().catch(() => {});
+  scheduleAutoRefresh();
+}
+
+function scheduleAutoRefresh() {
+  clearTimeout(autoRefreshTimer);
+  nextAutoRefreshTime = Date.now() + AUTO_INTERVAL;
+  autoRefreshTimer = setTimeout(silentRefresh, AUTO_INTERVAL);
+}
+
+function resetAutoRefresh() {
+  scheduleAutoRefresh();
+}
+
+function getNextAutoRefreshStr() {
+  if (!nextAutoRefreshTime) return '';
+  const d = new Date(nextAutoRefreshTime);
+  return d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderAll() {
+  document.getElementById('groupsStatus').style.display = 'none';
+  renderGroupCards();
+  renderBracket();
+  updateTimeDisplay('');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+  if (tab === 'groups') {
+    document.getElementById('tabGroups').classList.add('active');
+    document.getElementById('panelGroups').classList.add('active');
+  } else if (tab === 'knockout') {
+    document.getElementById('tabKnockout').classList.add('active');
+    document.getElementById('panelKnockout').classList.add('active');
+    renderBracket();
+  } else if (tab === 'stats') {
+    document.getElementById('tabStats').classList.add('active');
+    document.getElementById('panelStats').classList.add('active');
+    renderStats();
+  }
+}
+
+// —— 首次加载（骨架屏 → 缓存 → 网络） ——
+init();
+</script>
+</body>
+</html>
