@@ -39,7 +39,7 @@ body {
 /* ========== 哈兰德背景水印 ========== */
 .haaland-bg {
   position: fixed;
-  top: 50%;
+  top: calc(50% + 30px);
   left: 50%;
   transform: translate(-50%, -50%);
   width: 350px;
@@ -52,6 +52,7 @@ body {
 
 @media (max-width: 768px) {
   .haaland-bg {
+    top: calc(50% + 20px);
     width: 220px;
     height: 478px;
     opacity: 0.07;
