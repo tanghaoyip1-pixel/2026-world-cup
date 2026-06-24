@@ -778,8 +778,7 @@ const BUNDLED_DATA = {
 <script>
 
 // ===== 预置统计（ESPN全28场已完成比赛，打包于2026-06-19）=====
-const BUNDLED_STATS = 
-{
+const BUNDLED_STATS = {
   "assists": [
     {
       "player": "Brahim Díaz",
@@ -1437,7 +1436,807 @@ const BUNDLED_STATS =
     }
   ]
 }
-;
+
+</script>
+
+<script>
+// ==================== 数据层 ====================
+
+// —— 48支球队身价（欧元，静态数据来源 Transfermarkt）——
+const MARKET_VALUES = {
+  "France": 1520000000, "England": 1360000000, "Spain": 1220000000,
+  "Portugal": 1010000000, "Germany": 947000000, "Brazil": 928000000,
+  "Argentina": 808000000, "Netherlands": 754000000, "Norway": 590000000,
+  "Belgium": 548000000, "Ivory Coast": 522000000, "Senegal": 478000000,
+  "Turkey": 474000000, "Morocco": 448000000, "Sweden": 406000000,
+  "Croatia": 387000000, "United States": 386000000, "Ecuador": 369000000,
+  "Uruguay": 359000000, "Switzerland": 333000000, "Colombia": 302000000,
+  "Japan": 271000000, "Algeria": 257000000, "Austria": 245000000,
+  "Ghana": 235000000, "Canada": 199000000, "Mexico": 192000000,
+  "Czech Republic": 188000000, "Scotland": 170000000, "Paraguay": 154000000,
+  "Bosnia and Herzegovina": 146000000, "DR Congo": 144000000, "Democratic Republic of the Congo": 144000000,
+  "South Korea": 139000000, "Egypt": 117000000, "Uzbekistan": 85000000,
+  "Australia": 78000000, "Tunisia": 70000000, "Haiti": 56000000,
+  "Cape Verde": 49000000, "South Africa": 49000000, "Saudi Arabia": 41000000,
+  "Panama": 35000000, "New Zealand": 35000000, "Iran": 32000000,
+  "Curaçao": 26000000, "Iraq": 21000000, "Jordan": 20000000,
+  "Qatar": 20000000
+};
+
+function fmtValue(v) {
+  if (!v) return '—';
+  if (v >= 1e9) return '€' + (v / 1e9).toFixed(2) + '亿';
+  if (v >= 1e6) return '€' + (v / 1e6).toFixed(0) + 'M';
+  return '€' + v.toLocaleString();
+}
+
+// —— API 数据源 ——
+const ESPN_API  = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world';
+const WC26_API  = 'https://worldcup26.ir';
+
+// ESPN 队名 → wc26 队名（少数差异）
+const NAME_FIX = {
+  'Türkiye': 'Turkey', 'Czechia': 'Czech Republic',
+  'Korea Republic': 'South Korea', 'IR Iran': 'Iran',
+  'Côte d\'Ivoire': 'Ivory Coast', 'USA': 'United States',
+  'Cabo Verde': 'Cape Verde', 'Curaçao': 'Curaçao',
+  'Bosnia-Herzegovina': 'Bosnia and Herzegovina',
+  'Congo DR': 'Democratic Republic of the Congo',
+  'DR Congo': 'Democratic Republic of the Congo',
+};
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// —— 全局数据 ——
+let teamsMap = {};      // team_id(string) → {name_en, flag, fifa_code, groups}
+let groupsData = [];    // [{name, teams: [{team_id, mp, w, d, l, gf, ga, gd, pts}]}]
+let gamesData = [];     // [{home_team_name_en, away_team_name_en, home_score, away_score, group, finished, ...}]
+let lastFetchTime = null;
+let refreshSource = ''; // 'espn' | 'wc26' | 'bundle'
+
+// ==================== 从预置数据构建基础信息 ====================
+function buildTeamInfoFromBundle() {
+  if (typeof BUNDLED_DATA === 'undefined') return;
+  const tRes = BUNDLED_DATA.teams?.teams || [];
+  teamsMap = {};
+  tRes.forEach(t => { teamsMap[String(t.id)] = t; });
+}
+
+// ==================== ESPN 数据源（快速） ====================
+async function fetchFromESPN() {
+  const resp = await fetch(ESPN_API + '/scoreboard?dates=20260611-20260719');
+  if (!resp.ok) throw new Error('ESPN HTTP ' + resp.status);
+  const data = await resp.json();
+
+  // 按组聚合积分
+  const raw = {}; // {A: {TeamName: {mp,w,d,l,gf,ga}}}
+  const games = [];
+
+  for (const ev of data.events || []) {
+    const comp = ev.competitions?.[0];
+    if (!comp) continue;
+    const gm = comp.altGameNote?.match(/Group ([A-L])/);
+    if (!gm) continue;
+    const grp = gm[1];
+    const cs = comp.competitors || [];
+    if (cs.length < 2) continue;
+
+    const hName = NAME_FIX[cs[0]?.team?.displayName] || cs[0]?.team?.displayName || '?';
+    const aName = NAME_FIX[cs[1]?.team?.displayName] || cs[1]?.team?.displayName || '?';
+    const hScore = parseInt(cs[0]?.score) || 0;
+    const aScore = parseInt(cs[1]?.score) || 0;
+    const finished = comp.status?.type?.completed || false;
+
+    if (!raw[grp]) raw[grp] = {};
+    for (const [nm, sc, osc] of [[hName, hScore, aScore], [aName, aScore, hScore]]) {
+      if (!raw[grp][nm]) raw[grp][nm] = { mp:0, w:0, d:0, l:0, gf:0, ga:0 };
+      const r = raw[grp][nm];
+      if (finished) {
+        r.mp++; r.gf += sc; r.ga += osc;
+        if (sc > osc) { r.w++; } else if (sc === osc) { r.d++; } else { r.l++; }
+      }
+    }
+
+    games.push({
+      home_team_name_en: hName, away_team_name_en: aName,
+      home_score: String(hScore), away_score: String(aScore),
+      group: grp, finished: finished ? 'TRUE' : 'FALSE',
+      local_date: ev.date, type: 'group',
+      home_scorers: null, away_scorers: null
+    });
+  }
+
+  // 转换为 groupsData 格式：按预置数据补全 team_id / flag / group
+  const nameToInfo = {};
+  Object.values(teamsMap).forEach(t => {
+    nameToInfo[t.name_en] = t;
+    // also try fixes
+  });
+
+  const groupsArr = [];
+  for (const [grpName, teamMap] of Object.entries(raw)) {
+    const teams = [];
+    for (const [tName, stats] of Object.entries(teamMap)) {
+      const pts = stats.w * 3 + stats.d;
+      const info = nameToInfo[tName] || {};
+      teams.push({
+        team_id: info.id || tName,
+        name: tName, flag: info.flag || '',
+        fifa: info.fifa_code || '',
+        mp: stats.mp, w: stats.w, d: stats.d, l: stats.l,
+        gf: stats.gf, ga: stats.ga, gd: stats.gf - stats.ga,
+        pts: pts,
+        marketValue: MARKET_VALUES[tName] || null
+      });
+    }
+    teams.sort((a, b) => b.pts - a.pts || (b.gf - b.ga) - (a.gf - a.ga) || b.gf - a.gf);
+    groupsArr.push({ name: grpName, teams });
+  }
+  groupsArr.sort((a, b) => a.name.localeCompare(b.name));
+
+  return { groups: groupsArr, games, source: 'espn', allOk: true };
+}
+
+// ==================== worldcup26.ir 数据源（慢速备用） ====================
+async function fetchFromWC26(timeoutMs = 6000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const [tR, gR, gsR] = await Promise.all([
+      fetch(WC26_API + '/get/teams', { signal: ctrl.signal }).then(r => r.ok ? r.json() : null),
+      fetch(WC26_API + '/get/groups', { signal: ctrl.signal }).then(r => r.ok ? r.json() : null),
+      fetch(WC26_API + '/get/games', { signal: ctrl.signal }).then(r => r.ok ? r.json() : null)
+    ]);
+
+    const teams = {};
+    (tR?.teams || []).forEach(t => { teams[String(t.id)] = t; });
+
+    const groupsArr = (gR?.groups || []).map(g => {
+      const td = (g.teams || []).map(t => {
+        const info = teams[String(t.team_id)] || {};
+        return {
+          team_id: t.team_id, name: info.name_en || 'Team ' + t.team_id,
+          flag: info.flag || '', fifa: info.fifa_code || '',
+          mp: +t.mp||0, w: +t.w||0, d: +t.d||0, l: +t.l||0,
+          gf: +t.gf||0, ga: +t.ga||0, gd: +t.gd||0, pts: +t.pts||0,
+          marketValue: MARKET_VALUES[info.name_en] || null
+        };
+      }).sort((a,b) => b.pts-a.pts || b.gd-a.gd || b.gf-a.gf);
+      return { name: g.name, teams: td };
+    });
+    groupsArr.sort((a,b) => a.name.localeCompare(b.name));
+
+    const games = (gsR?.games || []).filter(g => g.type === 'group');
+
+    // Also update teamsMap from wc26
+    Object.entries(teams).forEach(([id, t]) => { teamsMap[id] = t; });
+
+    return { groups: groupsArr, games, source: 'wc26',
+      allOk: !!(tR && gR && gsR),
+      partial: { teams: !tR, groups: !gR, games: !gsR }
+    };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ==================== 竞速加载 ====================
+async function fetchAllFresh(timeoutMs = 6000) {
+  // ESPN 和 wc26 同时请求，谁先回来用谁
+  const espnP = fetchFromESPN();
+  const wc26P = fetchFromWC26(timeoutMs);
+  const timeoutP = sleep(timeoutMs).then(() => ({ source: 'timeout' }));
+
+  const winner = await Promise.race([espnP, wc26P, timeoutP]);
+
+  if (winner.source === 'timeout') throw new Error('所有数据源超时');
+
+  // 如果是 ESPN 先到，wc26 可以稍后补全一些详细数据
+  if (winner.source === 'espn' && winner.groups?.length === 12) {
+    // 后台尝试 wc26 补齐比赛进球者等细节
+    wc26P.then(wc => {
+      if (wc?.games) {
+        gamesData = wc.games.filter(g => g.type === 'group');
+        // 静默更新
+      }
+    }).catch(() => {});
+  }
+
+  return winner;
+}
+
+// ==================== localStorage 缓存 ====================
+const CACHE_KEY = 'wc2026_data';
+const CACHE_MAX_AGE = 5 * 60 * 1000;
+
+function saveCache(teamsRaw, groupsRaw, gamesRaw) {
+  try {
+    const cache = { teams: teamsRaw, groups: groupsRaw, games: gamesRaw, time: Date.now() };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch(e) {}
+}
+
+function loadCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const cache = JSON.parse(raw);
+    return (Date.now() - cache.time > CACHE_MAX_AGE) ? null : cache;
+  } catch(e) { return null; }
+}
+
+function applyComputedData(result) {
+  // 直接用 fetchAllFresh 的返回结果更新全局数据
+  groupsData = result.groups || [];
+  gamesData = result.games || [];
+  lastFetchTime = new Date();
+  refreshSource = result.source || '?';
+  cachedStats = null; // 数据变了，统计需要重新算
+}
+
+function applyRawData(teamsRaw, groupsRaw, gamesRaw) {
+  teamsMap = {};
+  (teamsRaw?.teams || []).forEach(t => { teamsMap[String(t.id)] = t; });
+  groupsData = groupsRaw?.groups || [];
+  gamesData = (gamesRaw?.games || []).filter(g => g.type === 'group');
+  lastFetchTime = new Date();
+  cachedStats = null;
+}
+
+// —— 获取小组完整数据 ——
+function getGroupFullData(group) {
+  // 兼容两种数据格式：ESPN直接带name/flag，bundled只有team_id
+  const teams = (group.teams || []).map(t => {
+    if (t.name) return t; // ESPN格式：已包含完整数据
+    // Bundled格式：需要用teamsMap补全
+    const info = teamsMap[String(t.team_id)] || {};
+    return {
+      team_id: t.team_id,
+      name: info.name_en || 'Team ' + t.team_id,
+      flag: info.flag || '',
+      fifa: info.fifa_code || '',
+      mp: t.mp || 0, w: t.w || 0, d: t.d || 0, l: t.l || 0,
+      gf: t.gf || 0, ga: t.ga || 0, gd: t.gd || 0, pts: t.pts || 0,
+      marketValue: MARKET_VALUES[info.name_en] || null
+    };
+  });
+  return teams.sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf);
+}
+
+// —— 获取小组的比赛 ——
+function getGroupGames(groupName) {
+  return gamesData.filter(g => g.group === groupName);
+}
+
+// ==================== 渲染：小组赛 ====================
+
+function renderGroupCards() {
+  const grid = document.getElementById('groupsGrid');
+  grid.innerHTML = '';
+
+  // 按名称排序
+  const sorted = [...groupsData].sort((a, b) => a.name.localeCompare(b.name));
+
+  sorted.forEach(group => {
+    const teams = getGroupFullData(group);
+    const card = document.createElement('div');
+    card.className = 'group-card';
+    card.onclick = () => openGroupDetail(group.name, teams);
+
+    let html = `<div class="group-card-header">
+      <span class="group-name">${group.name} 组</span>
+      <span class="arrow">详情 →</span>
+    </div>`;
+
+    teams.forEach((t, i) => {
+      const isQ = i < 2; // 前两名晋级
+      html += `<div class="team-row${isQ ? ' qualified' : ''}">
+        <span class="team-rank">${i + 1}</span>
+        <img class="team-flag" src="${t.flag}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <span class="team-name">${t.name}</span>
+        <span class="team-stats">
+          <span class="stat-item stat-mp" title="场次">${t.mp}</span>
+          <span class="stat-item stat-gf" title="进球">${t.gf}</span>
+          <span class="stat-item stat-ga" title="失球">${t.ga}</span>
+          <span class="stat-item stat-gd" title="净胜球">${t.gd >= 0 ? '+' : ''}${t.gd}</span>
+          <span class="stat-item stat-pts" title="积分">${t.pts}</span>
+        </span>
+      </div>`;
+    });
+
+    card.innerHTML = html;
+    grid.appendChild(card);
+  });
+}
+
+// —— 组详情弹窗 ——
+function openGroupDetail(groupName, teams) {
+  // 移除已有弹窗
+  document.querySelectorAll('.modal-overlay').forEach(e => e.remove());
+
+  const games = getGroupGames(groupName);
+
+  let tableRows = '';
+  teams.forEach((t, i) => {
+    const isQ = i < 2;
+    tableRows += `<tr class="${isQ ? 'qualify-row' : ''}">
+      <td>
+        <img src="${t.flag}" alt="" style="width:24px;height:16px;object-fit:cover;border-radius:2px;" onerror="this.style.display='none'">
+        ${isQ ? '⭐ ' : ''}${t.name}
+      </td>
+      <td>${t.mp}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
+      <td>${t.gf}</td><td>${t.ga}</td><td>${t.gd >= 0 ? '+' + t.gd : t.gd}</td>
+      <td><strong style="color:var(--gold-bright);font-size:16px;">${t.pts}</strong></td>
+      <td class="market-value">${fmtValue(t.marketValue)}</td>
+    </tr>`;
+  });
+
+  let matchHtml = '';
+  if (games.length === 0) {
+    matchHtml = '<p style="color:#777;text-align:center;padding:20px;">暂无比赛记录</p>';
+  } else {
+    games.sort((a, b) => {
+      if (a.finished === 'TRUE' && b.finished !== 'TRUE') return -1;
+      if (a.finished !== 'TRUE' && b.finished === 'TRUE') return 1;
+      return 0;
+    });
+    games.forEach(g => {
+      let statusClass = '';
+      let statusText = '';
+      if (g.finished === 'TRUE') { statusClass = 'match-finished'; statusText = '已结束'; }
+      else if (g.time_elapsed === 'live') { statusClass = 'match-live'; statusText = '● 直播中'; }
+      else { statusClass = 'match-scheduled'; statusText = g.local_date || '待定'; }
+
+      const hScorers = tryParseScorers(g.home_scorers);
+      const aScorers = tryParseScorers(g.away_scorers);
+
+      matchHtml += `<div class="match-item">
+        <div class="match-teams">
+          <img src="${findFlag(g.home_team_name_en)}" style="width:22px;height:15px;border-radius:2px;" onerror="this.style.display='none'">
+          <span>${g.home_team_name_en || 'TBD'}</span>
+        </div>
+        <div class="match-score">${g.home_score ?? '-'} : ${g.away_score ?? '-'}</div>
+        <div class="match-teams" style="justify-content:flex-end;text-align:right;">
+          <span>${g.away_team_name_en || 'TBD'}</span>
+          <img src="${findFlag(g.away_team_name_en)}" style="width:22px;height:15px;border-radius:2px;" onerror="this.style.display='none'">
+        </div>
+        <div class="match-meta">
+          <span class="${statusClass}">${statusText}</span>
+          ${hScorers || aScorers ? `<div class="scorers">⚽ ${[hScorers, aScorers].filter(Boolean).join(' / ')}</div>` : ''}
+        </div>
+      </div>`;
+    });
+  }
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+  overlay.innerHTML = `<div class="modal">
+    <div class="modal-header">
+      <h2>${groupName} 组 — 详细数据</h2>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+    </div>
+    <div class="modal-body">
+      <h3 style="margin-bottom:10px;color:#8ab890;">📊 积分榜</h3>
+      <div style="overflow-x:auto;">
+        <table class="standings-table">
+          <thead><tr>
+            <th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th><th>身价</th>
+          </tr></thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+      </div>
+
+      <h3 style="margin:20px 0 10px;color:#8ab890;">📅 比赛记录</h3>
+      <div class="match-list">${matchHtml}</div>
+    </div>
+  </div>`;
+
+  document.body.appendChild(overlay);
+}
+
+function findFlag(name) {
+  if (!name) return '';
+  for (const [id, info] of Object.entries(teamsMap)) {
+    if (info.name_en === name) return info.flag || '';
+  }
+  return '';
+}
+
+function tryParseScorers(raw) {
+  if (!raw || raw === 'null') return '';
+  try {
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) return arr.join(', ');
+    return raw;
+  } catch { return raw; }
+}
+
+// ==================== 渲染：淘汰赛对阵图 ====================
+
+// FIFA官方 Round of 32 对阵表
+// 格式: [slotA描述, slotB描述]  其中 slotA/slotB 可能是 "W:A"(A组第一) "R:B"(B组第二) "3:ABCD"(3rd from A/B/C/D)
+const R32_MATCHES = [
+  { id: 1, slots: ['R:A', 'R:B'], label: 'A2 vs B2' },
+  { id: 2, slots: ['W:E', '3:A,B,C,D,F'], label: 'E1 vs 3rd' },
+  { id: 3, slots: ['W:F', 'R:C'], label: 'F1 vs C2' },
+  { id: 4, slots: ['W:C', 'R:F'], label: 'C1 vs F2' },
+  { id: 5, slots: ['W:I', '3:C,D,F,G,H'], label: 'I1 vs 3rd' },
+  { id: 6, slots: ['R:E', 'R:I'], label: 'E2 vs I2' },
+  { id: 7, slots: ['W:A', '3:C,E,F,H,I'], label: 'A1 vs 3rd' },
+  { id: 8, slots: ['W:L', '3:E,H,I,J,K'], label: 'L1 vs 3rd' },
+  { id: 9, slots: ['W:D', '3:B,E,F,I,J'], label: 'D1 vs 3rd' },
+  { id: 10, slots: ['W:G', '3:A,E,H,I,J'], label: 'G1 vs 3rd' },
+  { id: 11, slots: ['R:K', 'R:L'], label: 'K2 vs L2' },
+  { id: 12, slots: ['W:H', 'R:J'], label: 'H1 vs J2' },
+  { id: 13, slots: ['W:B', '3:E,F,G,I,J'], label: 'B1 vs 3rd' },
+  { id: 14, slots: ['W:J', 'R:H'], label: 'J1 vs H2' },
+  { id: 15, slots: ['W:K', '3:D,E,I,J,L'], label: 'K1 vs 3rd' },
+  { id: 16, slots: ['R:D', 'R:G'], label: 'D2 vs G2' },
+];
+
+// R32 → R16 连线
+const R16_MATCHES = [
+  { id: 1, from: [1, 2] },
+  { id: 2, from: [3, 4] },
+  { id: 3, from: [5, 6] },
+  { id: 4, from: [7, 8] },
+  { id: 5, from: [9, 10] },
+  { id: 6, from: [11, 12] },
+  { id: 7, from: [13, 14] },
+  { id: 8, from: [15, 16] },
+];
+
+// QF
+const QF_MATCHES = [
+  { id: 1, from: [1, 2] },
+  { id: 2, from: [3, 4] },
+  { id: 3, from: [5, 6] },
+  { id: 4, from: [7, 8] },
+];
+
+// SF
+const SF_MATCHES = [
+  { id: 1, from: [1, 2] },
+  { id: 2, from: [3, 4] },
+];
+
+// FINAL + 3rd
+const FINAL_MATCHES = [
+  { id: 'third', from: [1, 2], isThird: true },
+  { id: 'final', from: [1, 2], isFinal: true },
+];
+
+// 解析 slot 描述，查找球队
+function resolveSlot(slotDesc) {
+  // slotDesc example: "W:A" = Winner of A, "R:B" = Runner-up of B, "3:A,B,C,D,F"
+  if (slotDesc.startsWith('W:')) {
+    const group = slotDesc.slice(2);
+    const grp = groupsData.find(g => g.name === group);
+    if (!grp) return { team: null, desc: group + '组第1' };
+    const teams = getGroupFullData(grp);
+    return { team: teams[0] || null, desc: group + '组第1' };
+  }
+  if (slotDesc.startsWith('R:')) {
+    const group = slotDesc.slice(2);
+    const grp = groupsData.find(g => g.name === group);
+    if (!grp) return { team: null, desc: group + '组第2' };
+    const teams = getGroupFullData(grp);
+    return { team: teams[1] || null, desc: group + '组第2' };
+  }
+  if (slotDesc.startsWith('3:')) {
+    const groups = slotDesc.slice(2).split(',');
+    return { team: null, desc: '第3 (' + groups.join('/') + ')', isThird: true };
+  }
+  return { team: null, desc: '待定' };
+}
+
+function renderBracketMatch(match, roundLabel) {
+  const [sA, sB] = match.slots.map(resolveSlot);
+
+  let html = `<div class="bracket-match${(sA.team || sB.team) ? ' confirmed' : ''}">`;
+
+  [sA, sB].forEach(s => {
+    const cls = s.team ? 'team-confirmed' : 'placeholder';
+    html += `<div class="bracket-slot ${cls}">`;
+    if (s.team) {
+      html += `<img src="${s.team.flag}" alt="" onerror="this.style.display='none'">`;
+      html += `<span>${s.team.name}</span>`;
+    } else {
+      html += `<span>${s.desc}</span>`;
+    }
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function renderSimpleSlot(label) {
+  return `<div class="bracket-match">
+    <div class="bracket-slot placeholder"><span>${label}</span></div>
+    <div class="bracket-slot placeholder"><span>待定</span></div>
+  </div>`;
+}
+
+function renderBracket() {
+  const container = document.getElementById('bracketContainer');
+  if (!groupsData.length) {
+    container.innerHTML = '<div class="status-box"><p style="color:#777;">请先加载小组赛数据</p></div>';
+    return;
+  }
+
+  // 各阶段比赛渲染
+  function renderRound(matches, getSlotLabel, connectorLabel) {
+    let html = '<div class="bracket-round">';
+    matches.forEach((m, i) => {
+      if (i > 0) {
+        // add spacing between matches
+        html += '<div style="height:8px;"></div>';
+      }
+      if (m.slots) {
+        html += renderBracketMatch(m);
+      } else {
+        html += renderSimpleSlot(getSlotLabel ? getSlotLabel(m) : 'TBD');
+      }
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function connector() {
+    return '<div class="bracket-connector" style="display:flex;align-items:center;">→</div>';
+  }
+
+  let html = '<div class="bracket">';
+
+  // R32
+  html += renderRound(R32_MATCHES);
+  html += connector();
+
+  // R16
+  html += renderRound(R16_MATCHES, m => 'R16-' + m.id);
+  html += connector();
+
+  // QF
+  html += renderRound(QF_MATCHES, m => 'QF' + m.id);
+  html += connector();
+
+  // SF
+  html += renderRound(SF_MATCHES, m => 'SF' + m.id);
+  html += connector();
+
+  // Final + 3rd
+  html += '<div class="bracket-round">';
+  html += renderSimpleSlot('🥉 季军赛');
+  html += '<div style="height:20px;"></div>';
+  html += renderSimpleSlot('🏆 决赛');
+  html += '</div>';
+
+  html += '</div>';
+
+  // Round labels
+  const labels = `
+    <div class="bracket-round-labels" style="display:flex;gap:8px;padding-left:0;margin-bottom:4px;">
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">32强</div>
+      <div style="width:30px;"></div>
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">16强</div>
+      <div style="width:30px;"></div>
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">8强</div>
+      <div style="width:30px;"></div>
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">半决赛</div>
+      <div style="width:30px;"></div>
+      <div style="min-width:170px;text-align:center;font-size:12px;color:#8ab890;font-weight:700;">决赛</div>
+    </div>
+  `;
+
+  container.innerHTML = labels + html;
+}
+
+// ==================== 骨架屏 ====================
+function renderSkeletonCards() {
+  const grid = document.getElementById('groupsGrid');
+  grid.innerHTML = '';
+  const groups = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+  groups.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'group-card skeleton-card';
+    card.innerHTML = `
+      <div class="group-card-header">
+        <span class="group-name">${g} 组</span>
+        <span class="arrow">加载中…</span>
+      </div>
+      ${[1,2,3,4].map(() => `
+        <div class="team-row skeleton-row">
+          <span class="skeleton-block" style="width:22px;height:16px;"></span>
+          <span class="skeleton-block" style="width:24px;height:16px;border-radius:2px;"></span>
+          <span class="skeleton-block" style="flex:1;height:14px;max-width:120px;"></span>
+          <span class="skeleton-block" style="width:80px;height:14px;"></span>
+          <span class="skeleton-block" style="width:24px;height:16px;"></span>
+        </div>
+      `).join('')}
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ==================== 数据榜单 ====================
+let cachedStats = null; // {goals:[{player,team,count}], assists:[], cards:[]}
+
+function parseScorerName(raw) {
+  // raw = "J. Quiñones 9'" / "B. Khoukhi 90'+5'" / "Y. Wissa 45+5'" 等
+  // 规则：最后一个空格后的词若以数字开头 → 去掉（那是时间标记）
+  let name = raw.trim();
+  const lastSpace = name.lastIndexOf(' ');
+  if (lastSpace > 0) {
+    const after = name.substring(lastSpace + 1);
+    if (/^\d/.test(after)) {
+      name = name.substring(0, lastSpace);
+    }
+  }
+  return name.trim();
+}
+
+function computeStats() {
+  // 尝试从缓存读取
+  if (cachedStats) return cachedStats;
+
+  const goalMap = {};   // key: player|team → {player, team, count}
+
+  // 1. 从预置数据解析射手（ESPN没有进球者名字，必须用bundled数据）
+  const bundledGames = (typeof BUNDLED_DATA !== 'undefined' ? BUNDLED_DATA.games?.games || [] : []);
+  // 同时尝试用gamesData补全（如果有wc26来源的数据）
+  const allGames = [...bundledGames];
+  for (const g of gamesData) {
+    if (g.home_scorers && g.home_scorers !== 'null') {
+      // wc26来源的数据有scorers，补进去（避免重复）
+      if (!allGames.find(bg => bg.home_team_name_en === g.home_team_name_en && bg.away_team_name_en === g.away_team_name_en)) {
+        allGames.push(g);
+      }
+    }
+  }
+
+  for (const g of allGames) {
+    if (g.finished !== 'TRUE') continue;
+    for (const [scorersRaw, teamName] of [[g.home_scorers, g.home_team_name_en], [g.away_scorers, g.away_team_name_en]]) {
+      if (!scorersRaw || scorersRaw === 'null') continue;
+      // 提取球员名（兼容弯引号 "…" 和直引号 "…"）
+      const names = scorersRaw.match(/[\"“]([^\"”]+)[\"”]/g);
+      if (!names) continue;
+      for (const n of names) {
+        const player = parseScorerName(n.replace(/[\"“”]/g, ''));
+        if (!player) continue;
+        const key = player + '|' + (teamName || '?');
+        if (!goalMap[key]) goalMap[key] = { player, team: teamName || '?', count: 0 };
+        goalMap[key].count++;
+      }
+    }
+  }
+
+  // 排序
+  const goals = Object.values(goalMap).sort((a, b) => b.count - a.count || a.player.localeCompare(b.player));
+
+  // 2. 助攻/红黄牌：预置统计优先（已抓完28场，比localStorage更全）
+  const savedStats = loadStatsCache();
+  const bundledS = (typeof BUNDLED_STATS !== 'undefined') ? BUNDLED_STATS : null;
+  const assistSrc = (savedStats?.assists?.length > (bundledS?.assists?.length || 0)) ? savedStats : bundledS;
+  const yellowSrc = (savedStats?.yellowCards?.length > (bundledS?.yellowCards?.length || 0)) ? savedStats : bundledS;
+  const redSrc = (savedStats?.redCards?.length > (bundledS?.redCards?.length || 0)) ? savedStats : bundledS;
+  const assists = (assistSrc?.assists || []).sort((a, b) => b.count - a.count);
+  const yellowCards = (yellowSrc?.yellowCards || []).sort((a, b) => b.count - a.count);
+  const redCards = (redSrc?.redCards || []).sort((a, b) => b.count - a.count);
+
+  cachedStats = { goals, assists, yellowCards, redCards };
+  return cachedStats;
+}
+
+function renderStats() {
+  const grid = document.getElementById('statsGrid');
+  if (!gamesData.length) {
+    grid.innerHTML = '<div class="status-box"><p style="color:#777;">请先加载比赛数据</p></div>';
+    return;
+  }
+
+  const stats = computeStats();
+
+  // 射手榜
+  let goalsHtml = '';
+  if (stats.goals.length) {
+    stats.goals.slice(0, 20).forEach((s, i) => {
+      const rankCls = i < 3 ? ` stats-rank-${i+1}` : '';
+      goalsHtml += `<tr class="${rankCls}">
+        <td>${i + 1}</td>
+        <td><span class="stats-player">${s.player}</span><br><span class="stats-team">${s.team}</span></td>
+        <td>${s.count}</td>
+      </tr>`;
+    });
+  } else {
+    goalsHtml = '<tr><td colspan="3" class="stats-note">暂无进球数据</td></tr>';
+  }
+
+  // 助攻榜
+  let assistsHtml = '';
+  if (stats.assists.length) {
+    stats.assists.slice(0, 20).forEach((s, i) => {
+      const rankCls = i < 3 ? ` stats-rank-${i+1}` : '';
+      assistsHtml += `<tr class="${rankCls}">
+        <td>${i + 1}</td>
+        <td><span class="stats-player">${s.player}</span><br><span class="stats-team">${s.team}</span></td>
+        <td>${s.count}</td>
+      </tr>`;
+    });
+  } else {
+    assistsHtml = '<tr><td colspan="3" class="stats-note">助攻数据采集中，请稍后刷新</td></tr>';
+  }
+
+  // 黄牌榜
+  let yellowHtml = '';
+  if ((stats.yellowCards || []).length) {
+    (stats.yellowCards || []).slice(0, 20).forEach((s, i) => {
+      const rankCls = i < 3 ? ` stats-rank-${i+1}` : '';
+      yellowHtml += `<tr class="${rankCls}">
+        <td>${i + 1}</td>
+        <td><span class="stats-player">${s.player}</span><br><span class="stats-team">${s.team}</span></td>
+        <td>${s.count}</td>
+      </tr>`;
+    });
+  } else {
+    yellowHtml = '<tr><td colspan="3" class="stats-note">黄牌数据采集中，请稍后刷新</td></tr>';
+  }
+
+  // 红牌榜
+  let redHtml = '';
+  if ((stats.redCards || []).length) {
+    (stats.redCards || []).slice(0, 20).forEach((s, i) => {
+      const rankCls = i < 3 ? ` stats-rank-${i+1}` : '';
+      redHtml += `<tr class="${rankCls}">
+        <td>${i + 1}</td>
+        <td><span class="stats-player">${s.player}</span><br><span class="stats-team">${s.team}</span></td>
+        <td>${s.count}</td>
+      </tr>`;
+    });
+  } else {
+    redHtml = '<tr><td colspan="3" class="stats-note">红牌数据采集中，请稍后刷新</td></tr>';
+  }
+
+  grid.innerHTML = `
+    <div class="stats-card">
+      <div class="stats-card-header"><span class="icon">⚽</span><span class="stats-header-goals">射手榜</span></div>
+      <table class="stats-table">
+        <thead><tr><th>#</th><th>球员</th><th>进球</th></tr></thead>
+        <tbody>${goalsHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-card-header"><span class="icon">🎯</span><span class="stats-header-assists">助攻榜</span></div>
+      <table class="stats-table">
+        <thead><tr><th>#</th><th>球员</th><th>助攻</th></tr></thead>
+        <tbody>${assistsHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-card-header"><span class="icon">🟨</span><span class="stats-header-cards">黄牌榜</span></div>
+      <table class="stats-table">
+        <thead><tr><th>#</th><th>球员</th><th>黄牌</th></tr></thead>
+        <tbody>${yellowHtml}</tbody>
+      </table>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-card-header"><span class="icon">🟥</span><span class="stats-header-cards">红牌榜</span></div>
+      <table class="stats-table">
+        <thead><tr><th>#</th><th>球员</th><th>红牌</th></tr></thead>
+        <tbody>${redHtml}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ==================== ESPN 辅助数据采集（助攻/红黄牌）====================
+const STATS_CACHE_KEY = 'wc2026_stats';
 const STATS_CACHE_VERSION = 3; // 升级版本号可强制清除旧缓存
 const PROCESSED_MATCHES_KEY = 'wc2026_processed_matches';
 
