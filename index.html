@@ -2117,9 +2117,18 @@ function computeStats() {
   // 排序
   const goals = Object.values(goalMap).sort((a, b) => b.count - a.count || a.player.localeCompare(b.player));
 
-  // 2. 助攻/红黄牌：预置统计优先（已抓完28场，比localStorage更全）
+  // 1.5 合并ESPN来源的进球数据（enrichStatsFromESPN抓取的新比赛）
   const savedStats = loadStatsCache();
   const bundledS = (typeof BUNDLED_STATS !== 'undefined') ? BUNDLED_STATS : null;
+  const espnGoals = (savedStats?.goals || []).concat(bundledS?.goals || []);
+  for (const eg of espnGoals) {
+    const gKey = eg.player + '|' + eg.team;
+    if (!goalMap[gKey]) goalMap[gKey] = { player: eg.player, team: eg.team, count: 0 };
+    goalMap[gKey].count = Math.max(goalMap[gKey].count, eg.count);
+  }
+  const mergedGoals = Object.values(goalMap).sort((a, b) => b.count - a.count || a.player.localeCompare(b.player));
+
+  // 2. 助攻/红黄牌：预置统计优先（已抓完28场，比localStorage更全）
   const assistSrc = (savedStats?.assists?.length > (bundledS?.assists?.length || 0)) ? savedStats : bundledS;
   const yellowSrc = (savedStats?.yellowCards?.length > (bundledS?.yellowCards?.length || 0)) ? savedStats : bundledS;
   const redSrc = (savedStats?.redCards?.length > (bundledS?.redCards?.length || 0)) ? savedStats : bundledS;
@@ -2127,7 +2136,7 @@ function computeStats() {
   const yellowCards = (yellowSrc?.yellowCards || []).sort((a, b) => b.count - a.count);
   const redCards = (redSrc?.redCards || []).sort((a, b) => b.count - a.count);
 
-  cachedStats = { goals, assists, yellowCards, redCards };
+  cachedStats = { goals: mergedGoals, assists, yellowCards, redCards };
   return cachedStats;
 }
 
@@ -2307,7 +2316,8 @@ async function enrichStatsFromESPN() {
     )
   );
 
-  // 解析助攻/黄牌/红牌
+  // 解析进球/助攻/黄牌/红牌
+  const goalMap = {};
   const assistMap = {};
   const yellowMap = {};
   const redMap = {};
@@ -2315,6 +2325,7 @@ async function enrichStatsFromESPN() {
   // 先从已有缓存加载
   const oldStats = loadStatsCache();
   if (oldStats) {
+    for (const g of oldStats.goals || []) goalMap[g.player + '|' + g.team] = {...g};
     for (const a of oldStats.assists || []) assistMap[a.player + '|' + a.team] = {...a};
     for (const y of oldStats.yellowCards || []) yellowMap[y.player + '|' + y.team] = {...y};
     for (const r of oldStats.redCards || []) redMap[r.player + '|' + r.team] = {...r};
@@ -2341,6 +2352,19 @@ async function enrichStatsFromESPN() {
       const text = ev.text || '';
 
       if (type === 'goal' || type.startsWith('goal---')) {
+        // 解析进球者名字: "Goal! ... Scorer Name (Team) ..."
+        const scorerMatch = text.match(/Goal[!.]\s*.*?[.!]\s*(.+?)\s*\(([^)]+)\)/);
+        if (scorerMatch) {
+          const scorerName = scorerMatch[1].trim();
+          const rawTeam = scorerMatch[2].trim();
+          const team = NAME_FIX[rawTeam] || rawTeam || (cs[0]?.team?.displayName || '?');
+          if (scorerName && !scorerName.startsWith('Assisted')) {
+            const gKey = scorerName + '|' + team;
+            if (!goalMap[gKey]) goalMap[gKey] = { player: scorerName, team, count: 0 };
+            goalMap[gKey].count++;
+          }
+        }
+        // 解析助攻
         const assistIdx = text.indexOf('Assisted by ');
         if (assistIdx >= 0) {
           let assistPart = text.substring(assistIdx + 'Assisted by '.length);
@@ -2388,12 +2412,14 @@ async function enrichStatsFromESPN() {
 
   // 更新全局stats
   if (cachedStats) {
+    cachedStats.goals = Object.values(goalMap).sort((a,b) => b.count - a.count || a.player.localeCompare(b.player));
     cachedStats.assists = Object.values(assistMap).sort((a,b) => b.count - a.count);
     cachedStats.yellowCards = Object.values(yellowMap).sort((a,b) => b.count - a.count);
     cachedStats.redCards = Object.values(redMap).sort((a,b) => b.count - a.count);
   }
 
   saveStatsCache({
+    goals: Object.values(goalMap),
     assists: Object.values(assistMap),
     yellowCards: Object.values(yellowMap),
     redCards: Object.values(redMap),
