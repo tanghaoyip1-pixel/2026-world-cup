@@ -1840,6 +1840,9 @@ async function refreshData() {
 
   try {
     buildTeamInfoFromBundle(); // 确保 teamsMap 就绪
+    // 先采集新比赛的助攻/红黄牌
+    await enrichStatsFromESPN().catch(() => {});
+    cachedStats = null; // 清除统计缓存
     const fresh = await fetchAllFresh(6000);
     clearInterval(countdown);
 
@@ -1861,8 +1864,6 @@ async function refreshData() {
       updateEl.innerHTML = '<span style="color:#f0c040;">无新数据</span>';
     }
     resetAutoRefresh();
-    // 后台采集助攻/红黄牌
-    enrichStatsFromESPN().catch(() => {});
   } catch (err) {
     clearInterval(countdown);
     console.error('刷新失败:', err);
@@ -1883,6 +1884,9 @@ async function silentRefresh() {
   console.log('⏰ 自动刷新...');
   try {
     buildTeamInfoFromBundle();
+    // 先采集新比赛的助攻/红黄牌（确保数据在render之前就位）
+    await enrichStatsFromESPN().catch(() => {});
+    cachedStats = null; // 清除统计缓存，强制computeStats从localStorage重新加载
     const fresh = await fetchAllFresh(6000);
     if (fresh.groups?.length) {
       applyComputedData(fresh);
@@ -1898,8 +1902,6 @@ async function silentRefresh() {
   } catch (err) {
     console.log('自动刷新未完成:', err.message);
   }
-  // 后台采集助攻/红黄牌
-  enrichStatsFromESPN().catch(() => {});
   scheduleAutoRefresh();
 }
 
